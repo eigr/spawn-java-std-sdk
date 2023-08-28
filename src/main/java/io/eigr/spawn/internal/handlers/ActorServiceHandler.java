@@ -135,7 +135,7 @@ public final class ActorServiceHandler implements HttpHandler {
 
                 final Method actorMethod = entityMethod.getMethod();
                 Class inputType = entityMethod.getInputType();
-                log.debug("Action input type is: {}", inputType);
+                log.debug("Action input type is: {}. Deserialize with value {}", inputType, value.getTypeUrl());
 
                 ActorContext actorContext;
                 if (context.hasState()) {
