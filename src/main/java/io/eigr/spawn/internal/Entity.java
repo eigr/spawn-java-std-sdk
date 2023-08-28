@@ -2,6 +2,8 @@ package io.eigr.spawn.internal;
 
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.annotations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -9,6 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Entity {
+    private static final Logger log = LoggerFactory.getLogger(Entity.class);
     private String actorName;
     private Class<?> actorType;
 
@@ -219,8 +222,8 @@ public final class Entity {
                 minPoolSize,
                 maxPoolSize);
 
-        //log.info("Registering NamedActor: {}", actorName);
-        //log.debug("Registering Entity -> {}", entityType);
+        log.info("Registering NamedActor: {}", actorName);
+        log.debug("Registering Entity -> {}", entityType);
         return entityType;
     }
 
@@ -258,8 +261,8 @@ public final class Entity {
                 minPoolSize,
                 maxPoolSize);
 
-        //log.info("Registering UnNamedActor: {}", actorName);
-        //log.debug("Registering Entity -> {}", entityType);
+        log.info("Registering UnNamedActor: {}", actorName);
+        log.debug("Registering Entity -> {}", entityType);
         return entityType;
     }
 
@@ -298,8 +301,8 @@ public final class Entity {
                 minPoolSize,
                 maxPoolSize);
 
-        //log.info("Registering PooledActor: {}", actorName);
-        //log.debug("Registering Entity -> {}", entityType);
+        log.info("Registering PooledActor: {}", actorName);
+        log.debug("Registering Entity -> {}", entityType);
         return entityType;
     }
 
@@ -327,7 +330,7 @@ public final class Entity {
 
                 actions.put(commandName, action);
             } catch (SecurityException e) {
-                //log.error("Failure on load Actor Action", e);
+                log.error("Failure on load Actor Action", e);
             }
         }
         return actions;
