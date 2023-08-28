@@ -107,7 +107,7 @@ We're also going to configure a few things for our application build to work, in
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.1.2</version>
+         <version>v0.1.3</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -166,8 +166,8 @@ We're also going to configure a few things for our application build to work, in
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-               <source>1.8</source>
-               <target>1.8</target>
+               <source>11</source>
+               <target>11</target>
             </configuration>
          </plugin>
       </plugins>
@@ -268,10 +268,27 @@ public class Joe {
 }
 ```
 
-Now with our Actor properly defined, we just need to start the SDK correctly. Create another file called main.py to serve as your application's entrypoint and fill it with the following content:
+Now with our Actor properly defined, we just need to start the SDK correctly. Create another file called App.java 
+to serve as your application's entrypoint and fill it with the following content:
 
 ```Java
+package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.Spawn;
+import io.eigr.spawn.Spawn.SpawnSystem;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        Spawn spawnSystem = new SpawnSystem()
+                .create("spawn-system")
+                .withPort(8091)
+                .withProxyPort(9003)
+                .withActor(Joe.class)
+                .build();
+
+        spawnSystem.start();
+    }
+}
 ```
 
 Then:

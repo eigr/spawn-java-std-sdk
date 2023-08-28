@@ -4,9 +4,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-/**
- * Unit test for simple App.
- */
 public class SpawnTest
         extends TestCase {
     /**
@@ -25,10 +22,8 @@ public class SpawnTest
         return new TestSuite(SpawnTest.class);
     }
 
-    /**
-     * Rigourous Test :-)
-     */
     public void testApp() {
+        new Spawn.SpawnSystem().build();
         assertTrue(true);
     }
 }

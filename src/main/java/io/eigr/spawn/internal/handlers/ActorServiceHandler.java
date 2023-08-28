@@ -36,7 +36,6 @@ public final class ActorServiceHandler implements HttpHandler {
 
     private static final int CACHE_MAXIMUM_SIZE = 10_000;
     private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
-    private static final int CACHE_REFRESH_AFTER_WRITE_SECONDS = 30;
     private final String system;
 
     private final List<Entity> entities;
@@ -50,7 +49,6 @@ public final class ActorServiceHandler implements HttpHandler {
         this.cache = Caffeine.newBuilder()
                 .maximumSize(CACHE_MAXIMUM_SIZE)
                 .expireAfterWrite(Duration.ofSeconds(CACHE_EXPIRE_AFTER_WRITE_SECONDS))
-                .refreshAfterWrite(Duration.ofSeconds(CACHE_REFRESH_AFTER_WRITE_SECONDS))
                 .build();
     }
 
