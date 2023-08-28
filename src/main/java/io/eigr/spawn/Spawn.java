@@ -186,7 +186,7 @@ public final class Spawn {
                 .collect(Collectors.toList());
     }
 
-    public static final class SpawnSystem {
+    public final class SpawnSystem {
 
         private SpawnClient client;
         private final List<Entity> entities = new ArrayList<>();
