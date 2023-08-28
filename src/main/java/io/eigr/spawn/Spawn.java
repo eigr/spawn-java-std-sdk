@@ -11,11 +11,13 @@ import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.client.SpawnClient;
 import io.eigr.spawn.internal.handlers.ActorServiceHandler;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -75,7 +77,8 @@ public final class Spawn {
     private void startServer() throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.port), 0);
         httpServer.createContext("/api/v1/actors/actions", new ActorServiceHandler(this.system, this.entities));
-        httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        //httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        httpServer.setExecutor(Executors.newCachedThreadPool());
         httpServer.start();
     }
 
