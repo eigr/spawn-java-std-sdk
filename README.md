@@ -92,7 +92,7 @@ We're also going to configure a few things for our application build to work, in
    <groupId>io.eigr.spawn</groupId>
    <artifactId>spawn-java-demo</artifactId>
    <packaging>jar</packaging>
-   <version>0.5.0</version>
+   <version>1.0-SNAPSHOT</version>
    <name>spawn-java-demo</name>
    <url>https://eigr.io</url>
    
@@ -105,9 +105,14 @@ We're also going to configure a few things for our application build to work, in
 
    <dependencies>
       <dependency>
-         <groupId>com.github.eigr-labs.spawn-java-std-sdk</groupId>
+         <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.5.0</version>
+         <version>v0.1.2</version>
+      </dependency>
+      <dependency>
+         <groupId>ch.qos.logback</groupId>
+         <artifactId>logback-classic</artifactId>
+         <version>1.4.7</version>
       </dependency>
    </dependencies>
 
@@ -119,7 +124,6 @@ We're also going to configure a few things for our application build to work, in
             <version>1.6.2</version>
          </extension>
       </extensions>
-
       <plugins>
          <plugin>
             <groupId>org.xolstice.maven.plugins</groupId>
@@ -221,13 +225,47 @@ mvn protobuf:compile
 Now in the spawn-java-demo folder we will create our first Java file containing the code of our Actor.
 
 ```shell
-touch src/main/io/eigr/spawn/java/demo/Joe.java
+touch src/main/java/io/eigr/spawn/java/demo/Joe.java
 ```
 
 Populate this file with the following content:
 
 ```Java
+package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.annotations.Action;
+import io.eigr.spawn.api.annotations.NamedActor;
+import io.eigr.spawn.java.demo.domain.Domain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@NamedActor(name = "joe", stateType = Domain.JoeState.class)
+public class Joe {
+    private static final Logger log = LoggerFactory.getLogger(Joe.class);
+
+    @Action(name = "hi", inputType = Domain.Request.class)
+    public Value hi(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+        log.info("Received invocation. Message: {}. Context: {}", msg, context);
+        if (context.getState().isPresent()) {
+            log.info("State is present and value is {}", context.getState().get());
+        }
+
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .state(updateState("erlang"))
+                .reply();
+    }
+
+    private Domain.JoeState updateState(String language) {
+        return Domain.JoeState.newBuilder()
+                .addLanguages(language)
+                .build();
+    }
+}
 ```
 
 Now with our Actor properly defined, we just need to start the SDK correctly. Create another file called main.py to serve as your application's entrypoint and fill it with the following content:

@@ -11,13 +11,11 @@ import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.client.SpawnClient;
 import io.eigr.spawn.internal.handlers.ActorServiceHandler;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -188,7 +186,7 @@ public final class Spawn {
                 .collect(Collectors.toList());
     }
 
-    private static final class SpawnSystem {
+    public static final class SpawnSystem {
 
         private SpawnClient client;
         private final List<Entity> entities = new ArrayList<>();
