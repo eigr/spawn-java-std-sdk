@@ -113,7 +113,7 @@ We're also going to configure a few things for our application build to work, in
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.1.6</version>
+         <version>v0.2.5</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -215,7 +215,7 @@ touch src/main/proto/domain/domain.proto
 
 And let's populate this file with the following content:
 
-```proto
+```protobuf
 syntax = "proto3";
 
 package domain;
@@ -389,17 +389,49 @@ For example, named actors are instantiated the first time as soon as the host ap
 
 Actors in Spawn can subscribe to a thread and receive, as well as broadcast, events for a given thread.
 
-To consume from a topic, you just need to configure the Actor decorator using the channel option as follows:
+To consume from a topic, you just need to configure the Actor annotation using the channel option as follows:
 
 ```Java
-
+@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
 ```
 In the case above, the Actor `joe` was configured to receive events that are forwarded to the topic called `test`.
 
 To produce events in a topic, just use the Broadcast Workflow. The example below demonstrates a complete example of producing and consuming events. In this case, the same actor is the event consumer and producer, but in a more realistic scenario, different actors would be involved in these processes.
 
 ```Java
+package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.workflows.Broadcast;
+// some imports omitted for brevity
+
+@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
+public class Joe {
+    @TimerAction(name = "hi", period = 60000)
+    public Value hi(ActorContext<Domain.JoeState> context) {
+        Domain.Request msg = Domain.Request.newBuilder()
+                .setLanguage("erlang")
+                .build();
+
+        return Value.at()
+                .flow(Broadcast.to("test", "setLanguage", msg))
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Erlang")
+                        .build())
+                .state(updateState("erlang"))
+                .reply();
+    }
+
+    @Action(inputType = Domain.Request.class)
+    public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .state(updateState("java"))
+                .reply();
+    }
+   // ....
+}
 ```
 
 ### Side Effects
@@ -426,7 +458,9 @@ See an example:
 
 ### Pipe
 
-Similarly, sometimes we want to chain a request through several processes. For example forwarding an actor's computational output as another actor's input. There is this type of routing we call Pipe, as the name suggests, a pipe forwards what would be the response of the received request to the input of another Action in another Actor.
+Similarly, sometimes we want to chain a request through several processes. For example forwarding an actor's computational 
+output as another actor's input. There is this type of routing we call Pipe, as the name suggests, a pipe forwards what 
+would be the response of the received request to the input of another Action in another Actor.
 In the end, just like in a Forward, it is the response of the last Actor in the chain of routing to the original caller.
 
 Example:
@@ -439,11 +473,18 @@ Forwards and pipes do not have an upper thread limit other than the request time
 
 ### State Management
 
-The Spawn runtime handles the internal state of your actors. It is he who maintains its state based on the types of actors and configurations that you, the developer, have made.
+The Spawn runtime handles the internal state of your actors. It is he who maintains its state based on the types of actors 
+and configurations that you, the developer, have made.
 
-The persistence of the state of the actors happens through snapshots that follow to [Write Behind Pattern](https://redisson.org/glossary/write-through-and-write-behind-caching.html) during the period in which the Actor is active and [Write Ahead](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html) during the moment of the Actor's deactivation. That is, data is saved at regular intervals asynchronously while the Actor is active and once synchronously when the Actor suffers a deactivation, when it is turned off.
+The persistence of the state of the actors happens through snapshots that follow to [Write Behind Pattern](https://redisson.org/glossary/write-through-and-write-behind-caching.html) 
+during the period in which the Actor is active and [Write Ahead](https://martinfowler.com/articles/patterns-of-distributed-systems/wal.html) 
+during the moment of the Actor's deactivation. 
+That is, data is saved at regular intervals asynchronously while the Actor is active and once synchronously 
+when the Actor suffers a deactivation, when it is turned off.
 
-These snapshots happen from time to time. And this time is configurable through the ***snapshot_timeout*** property of the ***ActorSettings*** class. However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action. And this can be done in the following way:
+These snapshots happen from time to time. And this time is configurable through the ***snapshot_timeout*** property of the ***ActorSettings*** class. 
+However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action.
+And this can be done in the following way:
 
 Example:
 
@@ -458,9 +499,11 @@ The most important thing in this example is the use of the parameter checkpoint=
 ```
 
 It is this parameter that will indicate to the Spawn runtime that you want the data to be saved immediately after this Action is called back.
-In most cases this strategy is completely unnecessary, as the default strategy is sufficient for most use cases. But Spawn democratically lets you choose when you want your data persisted.
+In most cases this strategy is completely unnecessary, as the default strategy is sufficient for most use cases. 
+But Spawn democratically lets you choose when you want your data persisted.
 
-In addition to this functionality regarding state management, Spawn also allows you to perform some more operations on your Actors such as restoring the actor's state to a specific point in time:
+In addition to this functionality regarding state management, Spawn also allows you to perform some more operations 
+on your Actors such as restoring the actor's state to a specific point in time:
 
 Restore Example:
 
@@ -468,9 +511,13 @@ TODO
 
 ## Using Actors
 
-There are several ways to interact with our actors, some internal to the application code and others external to the application code. In this section we will deal with the internal ways of interacting with our actors and this will be done through direct calls to them. For more details on the external ways to interact with your actors see the [Activators](#activators) section.
+There are several ways to interact with our actors, some internal to the application code and others external to the application code. 
+In this section we will deal with the internal ways of interacting with our actors and this will be done through direct calls to them. 
+For more details on the external ways to interact with your actors see the [Activators](#activators) section.
 
-In order to be able to call methods of an Actor, we first need to get a reference to the actor. This is done with the help of the static method `create_actor_ref` of the `Spawn` class. This method accepts some arguments, the most important being `system`, `actor_name` and `parent`.
+In order to be able to call methods of an Actor, we first need to get a reference to the actor. This is done with the 
+help of the static method `create_actor_ref` of the `Spawn` class. This method accepts some arguments, 
+the most important being `system`, `actor_name` and `parent`.
 
 In the sections below we will give some examples of how to invoke different types of actors in different ways.
 
@@ -479,38 +526,82 @@ In the sections below we will give some examples of how to invoke different type
 To invoke an actor named like the one we defined in section [Getting Started](#getting-started) we could do as follows:
 
 ```Java
-
+ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+        
+        Domain.Request msg = Domain.Request.newBuilder()
+                .setLanguage("erlang")
+                .build();
+        Domain.Reply reply = 
+                (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
 ```
 
-Calls like the one above, that is, synchronous calls, always returned a tuple composed of the invocation status message and the response object emitted by the Actor.
+More detailed in complete main class:
+
+```java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.Spawn;
+import io.eigr.spawn.Spawn.SpawnSystem;
+import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.java.demo.domain.Domain;
+
+import java.util.Optional;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        Spawn spawnSystem = new SpawnSystem()
+                .create("spawn-system")
+                .withPort(8091)
+                .withProxyPort(9003)
+                .withActor(Joe.class)
+                .build();
+
+        spawnSystem.start();
+
+        ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+
+        Domain.Request msg = Domain.Request.newBuilder()
+                .setLanguage("erlang")
+                .build();
+        Domain.Reply reply =
+                (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
+    }
+}
+```
 
 ### Call Unnamed Actors
 
-Unnamed actors are equally simple to invoke. All that is needed is to inform the `parent` parameter which refers to the name given to the actor that defines the ActorRef template.
+Unnamed actors are equally simple to invoke. All that is needed is to inform the `parent` parameter which refers to the 
+name given to the actor that defines the ActorRef template.
 
-To better exemplify, let's first show the Actor's definition code and later how we would call this actor with a concrete name at runtime:
+To better exemplify, let's first show the Actor's definition code and later how we would call this actor with a concrete 
+name at runtime:
 
 ```Java
-
+ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
+        
+        Domain.Request msg = Domain.Request.newBuilder()
+                .setLanguage("erlang")
+                .build();
+        Domain.Reply reply = 
+                (Domain.Reply) mike.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
 ```
 
 The important part of the code above is the following snippet:
 
 ```Java
-
+ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
 ```
 
-These tells Spawn that this actor will actually be named at runtime. The name parameter in this case is just a reference that will be used later so that we can actually create an instance of the real Actor.
-
-Finally, below we will see how to invoke such an actor. We'll name the royal actor "mike":
-
-```Java
-
-```
+These tells Spawn that this actor will actually be named at runtime. The name parameter in this case is just a reference 
+that will be used later so that we can actually create an instance of the real Actor.
 
 ### Async calls and other options
 
-Basically Spawn can perform actor functions in two ways. Synchronously, where the callee waits for a response, or asynchronously, where the callee doesn't care about the return value of the call. In this context we should not confuse Spawn's asynchronous way with Java's concept of async because async for Spawn is just a fire-and-forget call.
+Basically Spawn can perform actor functions in two ways. Synchronously, where the callee waits for a response, 
+or asynchronously, where the callee doesn't care about the return value of the call. 
+In this context we should not confuse Spawn's asynchronous way with Java's concept of async because async for Spawn is 
+just a fire-and-forget call.
 
 Therefore, to call an actor's function asynchronously, just inform the parameter async_mode with the value True:
 
@@ -520,21 +611,25 @@ Therefore, to call an actor's function asynchronously, just inform the parameter
 
 ## Deploy
 
-See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more details on how to deploy a Spawn application.
+See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more 
+details on how to deploy a Spawn application.
 
 ### Packing with Containers
 
 Spawn is a k8s based runtime and therefore your workloads should be made up of containers.
 
-So all you need to do is create a container with your Java application. There are several tutorials on the internet that can help you with this process and we will not go into detail in this document.
+So all you need to do is create a container with your Java application. There are several tutorials on the internet that 
+can help you with this process and we will not go into detail in this document.
 
 ### Defining an ActorSytem
 
-See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more details on how to define an ActorSystem.
+See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more 
+details on how to define an ActorSystem.
 
 ### Defining an ActorHost
 
-See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more details on how to define an ActorHost.
+See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more 
+details on how to define an ActorHost.
 
 ### Activators
 TODO
@@ -543,13 +638,19 @@ TODO
 
 According to Wikipedia Actor Model is:
 
-"A mathematical model of concurrent computation that treats actor as the universal primitive of concurrent computation. In response to a message it receives, an actor can: make local decisions, create more actors, send more messages, and determine how to respond to the next message received. Actors may modify their own private state, but can only affect each other indirectly through messaging (removing the need for lock-based synchronization).
+"A mathematical model of concurrent computation that treats actor as the universal primitive of concurrent computation. 
+In response to a message it receives, an actor can: make local decisions, create more actors, send more messages, 
+and determine how to respond to the next message received. Actors may modify their own private state, but can only affect 
+each other indirectly through messaging (removing the need for lock-based synchronization).
 
-The actor model originated in 1973. It has been used both as a framework for a theoretical understanding of computation and as the theoretical basis for several practical implementations of concurrent systems."
+The actor model originated in 1973. It has been used both as a framework for a theoretical understanding of computation 
+and as the theoretical basis for several practical implementations of concurrent systems."
 
 The Actor Model was proposed by Carl Hewitt, Peter Bishop, and Richard Steiger and is inspired by several characteristics of the physical world.
 
-Although it emerged in the 70s of the last century, only in the previous two decades of our century has this model gained strength in the software engineering communities due to the massive amount of existing data and the performance and distribution requirements of the most current applications.
+Although it emerged in the 70s of the last century, only in the previous two decades of our century has this model 
+gained strength in the software engineering communities due to the massive amount of existing data and the performance 
+and distribution requirements of the most current applications.
 
 For more information about the Actor Model, see the following links:
 
@@ -563,10 +664,15 @@ https://doc.akka.io/docs/akka/current/general/actors.html
 
 ### Virtual Actors
 
-In the context of the Virtual Actor paradigm, actors possess the inherent ability to seamlessly retain their state. The underlying framework dynamically manages the allocation of actors to specific nodes. If a node happens to experience an outage, the framework automatically revives the affected actor on an alternate node. This process of revival maintains data integrity as actors are inherently designed to preserve their state. Interruptions to availability are minimized during this seamless transition, contingent on the actors correctly implementing their state preservation mechanisms.
+In the context of the Virtual Actor paradigm, actors possess the inherent ability to seamlessly retain their state. 
+The underlying framework dynamically manages the allocation of actors to specific nodes. If a node happens to experience an outage, 
+the framework automatically revives the affected actor on an alternate node. This process of revival maintains 
+data integrity as actors are inherently designed to preserve their state. Interruptions to availability are minimized 
+during this seamless transition, contingent on the actors correctly implementing their state preservation mechanisms.
 
 The Virtual Actor model offers several merits:
 
 * **Scalability**: The system can effortlessly accommodate a higher number of actor instances by introducing additional nodes.
 
-* **Availability**: In case of a node failure, actors swiftly and nearly instantly regenerate on another node, all while safeguarding their state from loss.
+* **Availability**: In case of a node failure, actors swiftly and nearly instantly regenerate on another node, 
+all while safeguarding their state from loss.
