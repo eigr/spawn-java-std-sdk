@@ -55,6 +55,8 @@ public final class ActorServiceHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         log.debug("Received Actor Action Request. Exchange: {}", exchange);
+        log.debug("Received Actor Action Request. RequestMethod: {}", exchange.getRequestMethod());
+
 
         if ("POST".equals(exchange.getRequestMethod())) {
             Protocol.ActorInvocationResponse response = handleRequest(exchange);
@@ -101,8 +103,11 @@ public final class ActorServiceHandler implements HttpHandler {
                         .build();
             }
 
-            throw new ActorInvokeException("Action result is null");
+        } catch (Exception e) {
+            log.error("Error during handle request. Error: {}", e);
         }
+
+        throw new ActorInvokeException("Action result is null");
     }
 
     private Optional<Value> callAction(String system, String actor, String commandName, Any value, Protocol.Context context) {
