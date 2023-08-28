@@ -76,7 +76,7 @@ public final class Spawn {
     }
 
     private void startServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.port), 0);
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", this.port), 0);
         httpServer.createContext("/api/v1/actors/actions", new ActorServiceHandler(this.system, this.entities));
         //httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         httpServer.setExecutor(Executors.newCachedThreadPool());
