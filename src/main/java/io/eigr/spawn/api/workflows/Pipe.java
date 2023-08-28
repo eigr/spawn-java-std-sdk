@@ -15,7 +15,7 @@ public final class Pipe {
         this.command = command;
     }
 
-    public Pipe to(String actor, String command) {
+    public static Pipe to(String actor, String command) {
         return new Pipe(actor, command);
     }
 

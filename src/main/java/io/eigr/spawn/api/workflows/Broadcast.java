@@ -10,32 +10,32 @@ import java.util.Optional;
 
 public final class Broadcast<T extends GeneratedMessageV3> {
 
-    private final  Optional<String> channel;
-    private final Optional<String> command;
+    private final Optional<String> channel;
+    private final Optional<String> action;
     private final T payload;
 
-    private Broadcast(Optional<String> channel,  Optional<String> command, T payload) {
+    private Broadcast(Optional<String> channel, Optional<String> action, T payload) {
         this.channel = channel;
-        this.command = command;
+        this.action = action;
         this.payload = payload;
     }
 
     @NotNull
-    public Broadcast<T> to(String channel, String command, T payload) {
-        return new Broadcast<>(Optional.of(channel), Optional.of(command), payload);
+    public static <T extends GeneratedMessageV3> Broadcast to(String channel, String action, T payload) {
+        return new Broadcast<T>(Optional.of(channel), Optional.of(action), payload);
     }
 
     @NotNull
-    public Broadcast<T> to(String channel, T payload) {
-        return new Broadcast<>(Optional.ofNullable(channel), Optional.empty(), payload);
+    public static <T extends GeneratedMessageV3> Broadcast to(String channel, T payload) {
+        return new Broadcast<T>(Optional.ofNullable(channel), Optional.empty(), payload);
     }
 
-    public  Optional<String> getChannel() {
+    public Optional<String> getChannel() {
         return channel;
     }
 
-    public Optional<String>  getCommand() {
-        return command;
+    public Optional<String> getAction() {
+        return action;
     }
 
     public T getPayload() {
@@ -44,18 +44,18 @@ public final class Broadcast<T extends GeneratedMessageV3> {
 
     public Protocol.Broadcast build() {
         Protocol.Broadcast.Builder builder = Protocol.Broadcast.newBuilder();
-        if (this.command.isPresent()) {
-            builder.setActionName(this.command.get());
+        if (this.action.isPresent()) {
+            builder.setActionName(this.action.get());
         }
 
         if (this.channel.isPresent()) {
             builder.setActionName(this.channel.get());
         }
 
-        if (Objects.isNull(payload)) {
+        if (Objects.isNull(this.payload)) {
             builder.setNoop(Protocol.Noop.newBuilder().build());
         } else {
-            builder.setValue(Any.pack(payload));
+            builder.setValue(Any.pack(this.payload));
         }
 
         return builder.build();
@@ -65,7 +65,7 @@ public final class Broadcast<T extends GeneratedMessageV3> {
     public String toString() {
         final StringBuilder sb = new StringBuilder("Broadcast{");
         sb.append("channel='").append(channel).append('\'');
-        sb.append(", command=").append(command);
+        sb.append(", action=").append(action);
         sb.append(", payload=").append(payload);
         sb.append('}');
         return sb.toString();
@@ -76,11 +76,11 @@ public final class Broadcast<T extends GeneratedMessageV3> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Broadcast<?> broadcast = (Broadcast<?>) o;
-        return Objects.equals(channel, broadcast.channel) && Objects.equals(command, broadcast.command) && Objects.equals(payload, broadcast.payload);
+        return Objects.equals(channel, broadcast.channel) && Objects.equals(action, broadcast.action) && Objects.equals(payload, broadcast.payload);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(channel, command, payload);
+        return Objects.hash(channel, action, payload);
     }
 }

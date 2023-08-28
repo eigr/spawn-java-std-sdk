@@ -34,11 +34,11 @@ public final class SideEffect<T extends GeneratedMessageV3> {
         this.opts = Optional.of(opts);
     }
 
-    public SideEffect to(String system, String actor, String command, T payload) {
+    public static <T extends GeneratedMessageV3> SideEffect to(String system, String actor, String command, T payload) {
         return new SideEffect(system, actor, command, payload);
     }
 
-    public SideEffect to(String system, String actor, String command, T payload, InvocationOpts opts) {
+    public static <T extends GeneratedMessageV3> SideEffect to(String system, String actor, String command, T payload, InvocationOpts opts) {
         return new SideEffect(system, actor, command, payload, opts);
     }
 

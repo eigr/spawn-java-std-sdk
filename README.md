@@ -95,7 +95,13 @@ We're also going to configure a few things for our application build to work, in
    <version>1.0-SNAPSHOT</version>
    <name>spawn-java-demo</name>
    <url>https://eigr.io</url>
-   
+
+   <properties>
+      <maven.compiler.source>11</maven.compiler.source>
+      <maven.compiler.target>11</maven.compiler.target>
+      <project.encoding>UTF-8</project.encoding>
+   </properties>
+
    <repositories>
       <repository>
          <id>jitpack.io</id>
@@ -107,12 +113,18 @@ We're also going to configure a few things for our application build to work, in
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.1.3</version>
+         <version>v0.1.6</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
          <artifactId>logback-classic</artifactId>
          <version>1.4.7</version>
+      </dependency>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <version>4.13.2</version>
+         <scope>test</scope>
       </dependency>
    </dependencies>
 
@@ -124,7 +136,41 @@ We're also going to configure a few things for our application build to work, in
             <version>1.6.2</version>
          </extension>
       </extensions>
+      <!-- make jar runnable -->
       <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                     <shadedArtifactAttached>true</shadedArtifactAttached>
+                     <transformers>
+                        <transformer implementation=
+                                             "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                           <mainClass>io.eigr.spawn.java.demo.App</mainClass>
+                        </transformer>
+                     </transformers>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.7</version>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+               <source>11</source>
+               <target>11</target>
+            </configuration>
+         </plugin>
          <plugin>
             <groupId>org.xolstice.maven.plugins</groupId>
             <artifactId>protobuf-maven-plugin</artifactId>
@@ -142,33 +188,6 @@ We're also going to configure a few things for our application build to work, in
                   </goals>
                </execution>
             </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.7</version>
-         </plugin>
-         <plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <version>2.5.1</version>
-            <executions>
-               <execution>
-                  <id>getClasspathFilenames</id>
-                  <goals>
-                     <!-- provides the jars of the classpath as properties inside of maven
-                          so that we can refer to one of the jars in the exec plugin config below -->
-                     <goal>properties</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-               <source>11</source>
-               <target>11</target>
-            </configuration>
          </plugin>
       </plugins>
    </build>

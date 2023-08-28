@@ -15,7 +15,7 @@ public final class Forward {
         this.command = command;
     }
 
-    public Forward to(String actor, String command) {
+    public static Forward to(String actor, String command) {
         return new Forward(actor, command);
     }
 
