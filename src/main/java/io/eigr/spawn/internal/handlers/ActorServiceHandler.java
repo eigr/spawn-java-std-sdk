@@ -54,6 +54,8 @@ public final class ActorServiceHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        log.debug("Received Actor Action Request. Exchange: {}", exchange);
+
         if ("POST".equals(exchange.getRequestMethod())) {
             Protocol.ActorInvocationResponse response = handleRequest(exchange);
             try(OutputStream os = exchange.getResponseBody()) {
