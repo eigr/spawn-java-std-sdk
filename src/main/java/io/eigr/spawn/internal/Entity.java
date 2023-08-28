@@ -31,6 +31,8 @@ public final class Entity {
     private int minPoolSize;
     private int maxPoolSize;
 
+    private String channel;
+
     public Entity(
             String actorName,
             Class<?> actorType,
@@ -43,7 +45,8 @@ public final class Entity {
             Map<String, EntityMethod> actions,
             Map<String, EntityMethod> timerActions,
             int minPoolSize,
-            int maxPoolSize) {
+            int maxPoolSize,
+            String channel) {
         this.actorName = actorName;
         this.actorType = actorType;
         this.kind = kind;
@@ -56,6 +59,7 @@ public final class Entity {
         this.timerActions = timerActions;
         this.minPoolSize = minPoolSize;
         this.maxPoolSize = maxPoolSize;
+        this.channel = channel;
     }
 
     public String getActorName() {
@@ -98,6 +102,10 @@ public final class Entity {
         return actions;
     }
 
+    public Map<String, EntityMethod> getTimerActions() {
+        return timerActions;
+    }
+
     public int getMinPoolSize() {
         return minPoolSize;
     }
@@ -105,6 +113,8 @@ public final class Entity {
     public int getMaxPoolSize() {
         return maxPoolSize;
     }
+
+    public String getChannel(){ return channel; }
 
     public enum EntityMethodType {
         DIRECT, TIMER
@@ -184,6 +194,7 @@ public final class Entity {
         sb.append(", timerActions=").append(timerActions);
         sb.append(", minPoolSize=").append(minPoolSize);
         sb.append(", maxPoolSize=").append(maxPoolSize);
+        sb.append(", channel=").append(channel);
         sb.append('}');
         return sb.toString();
     }
@@ -204,6 +215,7 @@ public final class Entity {
         final Class stateType = actor.stateType();
         final int minPoolSize = actor.minPoolSize();
         final int maxPoolSize = actor.maxPoolSize();
+        final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
         final Map<String, Entity.EntityMethod> timerActions = buildActions(entity, TimerAction.class);
@@ -220,7 +232,9 @@ public final class Entity {
                 actions,
                 timerActions,
                 minPoolSize,
-                maxPoolSize);
+                maxPoolSize,
+                channel
+                );
 
         log.info("Registering NamedActor: {}", actorName);
         log.debug("Registering Entity -> {}", entityType);
@@ -243,6 +257,7 @@ public final class Entity {
         final Class stateType = actor.stateType();
         final int minPoolSize = actor.minPoolSize();
         final int maxPoolSize = actor.maxPoolSize();
+        final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
         final Map<String, Entity.EntityMethod> timerActions = buildActions(entity, TimerAction.class);
@@ -259,7 +274,8 @@ public final class Entity {
                 actions,
                 timerActions,
                 minPoolSize,
-                maxPoolSize);
+                maxPoolSize,
+                channel);
 
         log.info("Registering UnNamedActor: {}", actorName);
         log.debug("Registering Entity -> {}", entityType);
@@ -283,6 +299,7 @@ public final class Entity {
         final Class stateType = actor.stateType();
         final int minPoolSize = actor.minPoolSize();
         final int maxPoolSize = actor.maxPoolSize();
+        final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
         final Map<String, Entity.EntityMethod> timerActions = buildActions(entity, TimerAction.class);
@@ -299,7 +316,8 @@ public final class Entity {
                 actions,
                 timerActions,
                 minPoolSize,
-                maxPoolSize);
+                maxPoolSize,
+                channel);
 
         log.info("Registering PooledActor: {}", actorName);
         log.debug("Registering Entity -> {}", entityType);

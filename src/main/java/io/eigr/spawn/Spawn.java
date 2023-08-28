@@ -11,6 +11,8 @@ import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.client.SpawnClient;
 import io.eigr.spawn.internal.handlers.ActorServiceHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  * Spawn SDK Entrypoint
  */
 public final class Spawn {
+    private static final Logger log = LoggerFactory.getLogger(Spawn.class);
 
     private final SpawnClient client;
 
@@ -102,6 +105,8 @@ public final class Spawn {
                 .setServiceInfo(si)
                 .setActorSystem(actorSystem)
                 .build();
+
+        log.debug("Registering Actors on Proxy. Registry: {}", req);
         this.client.register(req);
     }
 
@@ -136,6 +141,7 @@ public final class Spawn {
 
             Map<String, String> tags = new HashMap<>();
             ActorOuterClass.Metadata metadata = ActorOuterClass.Metadata.newBuilder()
+                    .setChannelGroup(actorEntity.getChannel())
                     .putAllTags(tags)
                     .build();
 
@@ -170,7 +176,7 @@ public final class Spawn {
     }
 
     private List<ActorOuterClass.FixedTimerAction> getTimerCommands(Entity actorEntity) {
-        return actorEntity.getActions()
+        List<ActorOuterClass.FixedTimerAction> timerActions = actorEntity.getTimerActions()
                 .values()
                 .stream()
                 .filter(v -> Entity.EntityMethodType.TIMER.equals(v.getType()))
@@ -184,6 +190,9 @@ public final class Spawn {
                                 .build()
                 )
                 .collect(Collectors.toList());
+
+        log.debug("Actor have TimeActions: {}", timerActions);
+        return timerActions;
     }
 
     public static final class SpawnSystem {
