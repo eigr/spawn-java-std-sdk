@@ -67,11 +67,11 @@ public final class Spawn {
         registerActorSystem();
     }
 
-    public ActorRef createActorRef(String system, String name) {
+    public ActorRef createActorRef(String system, String name) throws Exception {
         return ActorRef.of(this.client, system, name);
     }
 
-    public ActorRef createActorRef(String system, String name, String parent) {
+    public ActorRef createActorRef(String system, String name, String parent) throws Exception {
         return ActorRef.of(this.client, system, name, parent);
     }
 
