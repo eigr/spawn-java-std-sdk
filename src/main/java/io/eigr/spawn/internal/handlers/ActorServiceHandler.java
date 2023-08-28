@@ -135,6 +135,7 @@ public final class ActorServiceHandler implements HttpHandler {
 
                 final Method actorMethod = entityMethod.getMethod();
                 Class inputType = entityMethod.getInputType();
+                log.debug("Action input type is: {}", inputType);
 
                 ActorContext actorContext;
                 if (context.hasState()) {
@@ -147,7 +148,7 @@ public final class ActorServiceHandler implements HttpHandler {
                 if (inputType.isAssignableFrom(ActorContext.class)) {
                     return Optional.of((Value) actorMethod.invoke(actorRef, actorContext));
                 } else {
-                    final Object unpack = value.unpack(entityMethod.getInputType());
+                    final Object unpack = value.unpack(inputType);
                     return Optional.of((Value) actorMethod.invoke(actorRef, unpack, actorContext));
                 }
             } catch (IllegalAccessException e) {

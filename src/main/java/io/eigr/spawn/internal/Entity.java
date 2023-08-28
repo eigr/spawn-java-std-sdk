@@ -1,6 +1,8 @@
 package io.eigr.spawn.internal;
 
 import io.eigr.functions.protocol.actors.ActorOuterClass;
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,6 +160,15 @@ public final class Entity {
         }
 
         public Class getInputType() {
+            int arity = method.getParameterTypes().length;
+
+            if (arity == 2 && Objects.isNull(inputType)) {
+                for (Class<?> parameterType : method.getParameterTypes()) {
+                    if (!inputType.isAssignableFrom(ActorContext.class)) {
+                        return parameterType;
+                    }
+                }
+            }
             return inputType;
         }
 
