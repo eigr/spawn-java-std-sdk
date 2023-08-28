@@ -123,7 +123,16 @@ public final class ActorServiceHandler implements HttpHandler {
                     this.cache.put(actorKey, actorRef);
                 }
 
-                final Entity.EntityMethod entityMethod = entity.getActions().get(commandName);
+                Entity.EntityMethod entityMethod;
+
+                if (entity.getActions().containsKey(commandName)) {
+                    entityMethod = entity.getActions().get(commandName);
+                } else if (entity.getTimerActions().containsKey(commandName)) {
+                    entityMethod = entity.getTimerActions().get(commandName);
+                } else {
+                    throw new ActorInvokeException(String.format("The Actor does not have the desired action: %s", commandName));
+                }
+
                 final Method actorMethod = entityMethod.getMethod();
                 Class inputType = entityMethod.getInputType();
 
