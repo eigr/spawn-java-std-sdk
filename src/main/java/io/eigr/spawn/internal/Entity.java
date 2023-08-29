@@ -1,9 +1,9 @@
 package io.eigr.spawn.internal;
 
 import io.eigr.functions.protocol.actors.ActorOuterClass;
-import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.annotations.*;
+import io.eigr.spawn.api.actors.ActorFactory;
+import io.eigr.spawn.api.actors.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +16,10 @@ public final class Entity {
     private static final Logger log = LoggerFactory.getLogger(Entity.class);
     private String actorName;
     private Class<?> actorType;
+
+    private Optional<Object> actorArg;
+
+    private Optional<ActorFactory> actorFactory;
 
     private ActorOuterClass.Kind kind;
 
@@ -48,7 +52,9 @@ public final class Entity {
             Map<String, EntityMethod> timerActions,
             int minPoolSize,
             int maxPoolSize,
-            String channel) {
+            String channel,
+            Optional<Object> actorArg,
+            Optional<ActorFactory> actorFactory) {
         this.actorName = actorName;
         this.actorType = actorType;
         this.kind = kind;
@@ -62,7 +68,11 @@ public final class Entity {
         this.minPoolSize = minPoolSize;
         this.maxPoolSize = maxPoolSize;
         this.channel = channel;
+        this.actorArg = actorArg;
+        this.actorFactory = actorFactory;
     }
+
+
 
     public String getActorName() {
         return actorName;
@@ -120,6 +130,14 @@ public final class Entity {
 
     public enum EntityMethodType {
         DIRECT, TIMER
+    }
+
+    public Optional<Object> getActorArg() {
+        return actorArg;
+    }
+
+    public Optional<ActorFactory> getActorFactory() {
+        return actorFactory;
     }
 
     public static final class EntityMethod {
@@ -210,7 +228,7 @@ public final class Entity {
         return sb.toString();
     }
 
-    public static Entity fromAnnotationToEntity(Class<?> entity, NamedActor actor) {
+    public static Entity fromAnnotationToEntity(Class<?> entity, NamedActor actor, Object arg, ActorFactory factory) {
         String actorBeanName = entity.getSimpleName();
         String actorName;
         if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
@@ -244,15 +262,16 @@ public final class Entity {
                 timerActions,
                 minPoolSize,
                 maxPoolSize,
-                channel
-                );
+                channel,
+                Optional.ofNullable(arg),
+                Optional.ofNullable(factory));
 
         log.info("Registering NamedActor: {}", actorName);
         log.debug("Registering Entity -> {}", entityType);
         return entityType;
     }
 
-    public static Entity fromAnnotationToEntity(Class<?> entity, UnNamedActor actor) {
+    public static Entity fromAnnotationToEntity(Class<?> entity, UnNamedActor actor, Object arg, ActorFactory factory) {
         String actorBeanName = entity.getSimpleName();
         String actorName;
         if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
@@ -286,14 +305,16 @@ public final class Entity {
                 timerActions,
                 minPoolSize,
                 maxPoolSize,
-                channel);
+                channel,
+                Optional.ofNullable(arg),
+                Optional.ofNullable(factory));
 
         log.info("Registering UnNamedActor: {}", actorName);
         log.debug("Registering Entity -> {}", entityType);
         return entityType;
     }
 
-    public static Entity fromAnnotationToEntity(Class<?> entity, PooledActor actor) {
+    public static Entity fromAnnotationToEntity(Class<?> entity, PooledActor actor, Object arg, ActorFactory factory) {
 
         String actorBeanName = entity.getSimpleName();
         String actorName;
@@ -328,7 +349,9 @@ public final class Entity {
                 timerActions,
                 minPoolSize,
                 maxPoolSize,
-                channel);
+                channel,
+                Optional.ofNullable(arg),
+                Optional.ofNullable(factory));
 
         log.info("Registering PooledActor: {}", actorName);
         log.debug("Registering Entity -> {}", entityType);
@@ -345,7 +368,7 @@ public final class Entity {
         for (Method method : methods) {
             try {
                 method.setAccessible(true);
-                String commandName = getCommandName(method, annotationType);
+                String commandName = getActionName(method, annotationType);
                 Class<?> inputType = getInputType(method, annotationType);
                 Class<?> outputType = getOutputType(method, annotationType);
 
@@ -390,7 +413,7 @@ public final class Entity {
         return entityMethodType;
     }
 
-    private static String getCommandName(Method method, Class<? extends Annotation> type) {
+    private static String getActionName(Method method, Class<? extends Annotation> type) {
         String commandName = "";
 
         if (type.isAssignableFrom(Action.class)) {

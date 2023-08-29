@@ -1,4 +1,4 @@
-package io.eigr.spawn.api.annotations;
+package io.eigr.spawn.api.actors.annotations;
 
 import com.google.protobuf.GeneratedMessageV3;
 
@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PooledActor {
+public @interface NamedActor {
     String value() default "";
 
     //@AliasFor("value")

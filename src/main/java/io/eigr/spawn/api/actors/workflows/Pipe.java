@@ -1,4 +1,4 @@
-package io.eigr.spawn.api.workflows;
+package io.eigr.spawn.api.actors.workflows;
 
 import io.eigr.functions.protocol.Protocol;
 

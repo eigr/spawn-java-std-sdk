@@ -1,4 +1,4 @@
-package io.eigr.spawn.api.annotations;
+package io.eigr.spawn.api.actors.annotations;
 
 import com.google.protobuf.GeneratedMessageV3;
 

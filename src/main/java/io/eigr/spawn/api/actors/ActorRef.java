@@ -31,7 +31,7 @@ public final class ActorRef {
         this.parent = Optional.empty();
         this.actorId = buildActorId();
         if (this.parent.isPresent()){
-            makeActor();
+            spawnActor();
         }
     }
 
@@ -42,7 +42,7 @@ public final class ActorRef {
         this.parent = Optional.of(parent);
         this.actorId = buildActorId();
         if (this.parent.isPresent()){
-            makeActor();
+            spawnActor();
         }
     }
 
@@ -55,12 +55,24 @@ public final class ActorRef {
         return new ActorRef(client, system, name, parent);
     }
 
+    public <T extends GeneratedMessageV3> Object invoke(String cmd, Class<T> outputType) throws Exception {
+        Object res = invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.empty());
+        return outputType.cast(res);
+    }
+
     public <T extends GeneratedMessageV3> Object invoke(String cmd, Class<T> outputType, Optional<InvocationOpts> opts) throws Exception {
-        return invokeActor(cmd, Empty.getDefaultInstance(), outputType, opts);
+        Object res = invokeActor(cmd, Empty.getDefaultInstance(), outputType, opts);
+        return outputType.cast(res);
+    }
+
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invoke(String cmd, S value, Class<T> outputType) throws Exception {
+        Object res = invokeActor(cmd, value, outputType, Optional.empty());
+        return outputType.cast(res);
     }
 
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invoke(String cmd, S value, Class<T> outputType, Optional<InvocationOpts> opts) throws Exception {
-        return invokeActor(cmd, value, outputType, opts);
+        Object res = invokeActor(cmd, value, outputType, opts);
+        return outputType.cast(res);
     }
 
     public String getActorSystem() {
@@ -95,7 +107,7 @@ public final class ActorRef {
         return actorIdBuilder.build();
     }
 
-    private void makeActor() throws Exception {
+    private void spawnActor() throws Exception {
         Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
                 .addActors(this.actorId)
                 .build();
@@ -141,8 +153,7 @@ public final class ActorRef {
                 throw new ActorNotFoundException();
             case OK:
                 if (resp.hasValue()) {
-                    return outputType.cast(resp.getValue()
-                            .unpack(outputType));
+                    return resp.getValue().unpack(outputType);
                 }
                 return null;
         }

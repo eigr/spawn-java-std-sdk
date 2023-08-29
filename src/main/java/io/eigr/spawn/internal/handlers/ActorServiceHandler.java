@@ -8,13 +8,15 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass.ActorId;
+import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.exceptions.ActorInvokeException;
-import io.eigr.spawn.api.workflows.Broadcast;
-import io.eigr.spawn.api.workflows.Forward;
-import io.eigr.spawn.api.workflows.Pipe;
-import io.eigr.spawn.api.workflows.SideEffect;
+import io.eigr.spawn.api.actors.workflows.Broadcast;
+import io.eigr.spawn.api.actors.workflows.Forward;
+import io.eigr.spawn.api.actors.workflows.Pipe;
+import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.internal.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,8 @@ public final class ActorServiceHandler implements HttpHandler {
 
     private static final int CACHE_MAXIMUM_SIZE = 10_000;
     private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
+
+    private final Spawn spawn;
     private final String system;
 
     private final List<Entity> entities;
@@ -43,8 +47,9 @@ public final class ActorServiceHandler implements HttpHandler {
     private final Cache<String, Object> cache;
 
 
-    public ActorServiceHandler(final String system, final List<Entity> actors) {
-        this.system = system;
+    public ActorServiceHandler(final Spawn spawn, final List<Entity> actors) {
+        this.spawn = spawn;
+        this.system = spawn.getSystem();
         this.entities = actors;
         this.cache = Caffeine.newBuilder()
                 .maximumSize(CACHE_MAXIMUM_SIZE)
@@ -138,9 +143,9 @@ public final class ActorServiceHandler implements HttpHandler {
                 ActorContext actorContext;
                 if (context.hasState()) {
                     Object state = context.getState().unpack(entity.getStateType());
-                    actorContext = new ActorContext(state);
+                    actorContext = new ActorContext(this.spawn, state);
                 } else {
-                    actorContext = new ActorContext();
+                    actorContext = new ActorContext(this.spawn);
                 }
 
                 if (inputType.isAssignableFrom(ActorContext.class)) {
@@ -162,6 +167,16 @@ public final class ActorServiceHandler implements HttpHandler {
     }
 
     private Object buildInstance(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        return buildInstanceByArg(entity);
+    }
+
+    private Object buildInstanceByArg(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        if (entity.getActorFactory().isPresent() && entity.getActorArg().isPresent()) {
+            ActorFactory factory = entity.getActorFactory().get();
+            Object arg = entity.getActorArg().get();
+            return factory.newInstance(arg);
+        }
+
         Class<?> klass = entity.getActorType();
         Constructor<?> constructor = klass.getConstructor();
         return constructor.newInstance();

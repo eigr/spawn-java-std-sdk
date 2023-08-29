@@ -254,36 +254,36 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.annotations.Action;
-import io.eigr.spawn.api.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.NamedActor;
 import io.eigr.spawn.java.demo.domain.Domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @NamedActor(name = "joe", stateType = Domain.JoeState.class)
 public class Joe {
-    private static final Logger log = LoggerFactory.getLogger(Joe.class);
+   private static final Logger log = LoggerFactory.getLogger(Joe.class);
 
-    @Action(name = "hi", inputType = Domain.Request.class)
-    public Value hi(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-        log.info("Received invocation. Message: {}. Context: {}", msg, context);
-        if (context.getState().isPresent()) {
-            log.info("State is present and value is {}", context.getState().get());
-        }
+   @Action(name = "hi", inputType = Domain.Request.class)
+   public Value hi(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+      log.info("Received invocation. Message: {}. Context: {}", msg, context);
+      if (context.getState().isPresent()) {
+         log.info("State is present and value is {}", context.getState().get());
+      }
 
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .state(updateState("erlang"))
-                .reply();
-    }
+      return Value.at()
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .state(updateState("erlang"))
+              .reply();
+   }
 
-    private Domain.JoeState updateState(String language) {
-        return Domain.JoeState.newBuilder()
-                .addLanguages(language)
-                .build();
-    }
+   private Domain.JoeState updateState(String language) {
+      return Domain.JoeState.newBuilder()
+              .addLanguages(language)
+              .build();
+   }
 }
 ```
 
@@ -293,20 +293,20 @@ to serve as your application's entrypoint and fill it with the following content
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.Spawn;
-import io.eigr.spawn.Spawn.SpawnSystem;
+import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.Spawn.SpawnSystem;
 
 public class App {
-    public static void main(String[] args) throws Exception {
-        Spawn spawnSystem = new SpawnSystem()
-                .create("spawn-system")
-                .withPort(8091)
-                .withProxyPort(9003)
-                .withActor(Joe.class)
-                .build();
+   public static void main(String[] args) throws Exception {
+      Spawn spawnSystem = new SpawnSystem()
+              .create("spawn-system")
+              .withPort(8091)
+              .withProxyPort(9003)
+              .withActor(Joe.class)
+              .build();
 
-        spawnSystem.start();
-    }
+      spawnSystem.start();
+   }
 }
 ```
 
@@ -401,35 +401,35 @@ To produce events in a topic, just use the Broadcast Workflow. The example below
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.workflows.Broadcast;
+import io.eigr.spawn.api.actors.workflows.Broadcast;
 // some imports omitted for brevity
 
 @NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
 public class Joe {
-    @TimerAction(name = "hi", period = 60000)
-    public Value hi(ActorContext<Domain.JoeState> context) {
-        Domain.Request msg = Domain.Request.newBuilder()
-                .setLanguage("erlang")
-                .build();
+   @TimerAction(name = "hi", period = 60000)
+   public Value hi(ActorContext<Domain.JoeState> context) {
+      Domain.Request msg = Domain.Request.newBuilder()
+              .setLanguage("erlang")
+              .build();
 
-        return Value.at()
-                .flow(Broadcast.to("test", "setLanguage", msg))
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Erlang")
-                        .build())
-                .state(updateState("erlang"))
-                .reply();
-    }
+      return Value.at()
+              .flow(Broadcast.to("test", "setLanguage", msg))
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Erlang")
+                      .build())
+              .state(updateState("erlang"))
+              .reply();
+   }
 
-    @Action(inputType = Domain.Request.class)
-    public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .state(updateState("java"))
-                .reply();
-    }
+   @Action(inputType = Domain.Request.class)
+   public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+      return Value.at()
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .state(updateState("java"))
+              .reply();
+   }
    // ....
 }
 ```
@@ -540,32 +540,32 @@ More detailed in complete main class:
 ```java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.Spawn;
-import io.eigr.spawn.Spawn.SpawnSystem;
+import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.Spawn.SpawnSystem;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.java.demo.domain.Domain;
 
 import java.util.Optional;
 
 public class App {
-    public static void main(String[] args) throws Exception {
-        Spawn spawnSystem = new SpawnSystem()
-                .create("spawn-system")
-                .withPort(8091)
-                .withProxyPort(9003)
-                .withActor(Joe.class)
-                .build();
+   public static void main(String[] args) throws Exception {
+      Spawn spawnSystem = new SpawnSystem()
+              .create("spawn-system")
+              .withPort(8091)
+              .withProxyPort(9003)
+              .withActor(Joe.class)
+              .build();
 
-        spawnSystem.start();
+      spawnSystem.start();
 
-        ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+      ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
 
-        Domain.Request msg = Domain.Request.newBuilder()
-                .setLanguage("erlang")
-                .build();
-        Domain.Reply reply =
-                (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
-    }
+      Domain.Request msg = Domain.Request.newBuilder()
+              .setLanguage("erlang")
+              .build();
+      Domain.Reply reply =
+              (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
+   }
 }
 ```
 

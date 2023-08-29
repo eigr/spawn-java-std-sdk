@@ -1,10 +1,10 @@
 package io.eigr.spawn.api;
 
 import com.google.protobuf.GeneratedMessageV3;
-import io.eigr.spawn.api.workflows.Broadcast;
-import io.eigr.spawn.api.workflows.Forward;
-import io.eigr.spawn.api.workflows.Pipe;
-import io.eigr.spawn.api.workflows.SideEffect;
+import io.eigr.spawn.api.actors.workflows.Broadcast;
+import io.eigr.spawn.api.actors.workflows.Forward;
+import io.eigr.spawn.api.actors.workflows.Pipe;
+import io.eigr.spawn.api.actors.workflows.SideEffect;
 
 import java.util.List;
 import java.util.Objects;

@@ -1,17 +1,27 @@
 package io.eigr.spawn.api.actors;
 
+import io.eigr.spawn.api.Spawn;
+
 import java.util.Optional;
 
 public final class ActorContext<S extends Object> {
 
+    private Spawn spawn;
+
     private Optional<S> state;
 
-    public ActorContext(){
+    public ActorContext(Spawn spawn){
+        this.spawn = spawn;
         this.state = Optional.empty();
     }
 
-    public ActorContext(S state) {
+    public ActorContext(Spawn spawn, S state) {
+        this.spawn = spawn;
         this.state = Optional.of(state);
+    }
+
+    public Spawn getSpawnSystem()  {
+        return spawn;
     }
 
     public Optional<S> getState()  {

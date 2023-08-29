@@ -1,5 +1,6 @@
 package io.eigr.spawn;
 
+import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.actors.ActorRef;
 import junit.framework.Test;
 import junit.framework.TestCase;
