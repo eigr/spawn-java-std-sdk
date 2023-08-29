@@ -3,6 +3,7 @@ package io.eigr.spawn.api.actors;
 import io.eigr.spawn.api.Spawn;
 
 import java.util.Optional;
+import java.util.StringJoiner;
 
 public final class ActorContext<S extends Object> {
 
@@ -30,9 +31,9 @@ public final class ActorContext<S extends Object> {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ActorContext{");
-        sb.append("state=").append(state);
-        sb.append('}');
-        return sb.toString();
+        return new StringJoiner(", ", ActorContext.class.getSimpleName() + "[", "]")
+                .add("spawn=" + spawn)
+                .add("state=" + state)
+                .toString();
     }
 }

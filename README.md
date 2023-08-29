@@ -365,6 +365,65 @@ volumes:
 
 ```
 
+You may also want your Actors to be initialized with some dependent objects similarly to how you would use the 
+dependency injection pattern. 
+In this case, it is enough to declare a constructor that receives a single argument for its actor.
+
+```java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.TimerAction;
+import io.eigr.spawn.api.actors.workflows.Broadcast;
+import io.eigr.spawn.java.demo.domain.Domain;
+
+import java.util.Map;
+
+@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
+public final class Joe {
+    private final String someValue;
+
+    public Joe(Map<String, String> args) {
+        this.someValue = args.get("someKey");
+    }
+
+    @Action(inputType = Domain.Request.class)
+    public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .state(updateState("java"))
+                .reply();
+    }
+
+    // ...
+}
+```
+
+In this case you need to register your Actor using the `addActorWithArgs` method like as follows: 
+
+```java
+public class App {
+    public static void main(String[] args) throws Exception {
+        Map<String, String> actorConstructorArgs = new HashMap<>();
+        actorConstructorArgs.put("someKey", "someValue");
+        
+        Spawn spawnSystem = new Spawn.SpawnSystem()
+                .create("spawn-system")
+                .withPort(8091)
+                .withProxyPort(9003)
+                .addActorWithArgs(Joe.class, actorConstructorArgs, arg -> new Joe((Map<String, String>) arg))
+                .build();
+
+        spawnSystem.start();
+    }
+}
+```
+
 And this is it to start! Now that you know the basics of local development, we can go a little further.
 
 ## Advanced Use Cases
