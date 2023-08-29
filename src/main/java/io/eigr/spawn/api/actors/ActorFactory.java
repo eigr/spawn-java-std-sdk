@@ -2,6 +2,5 @@ package io.eigr.spawn.api.actors;
 
 @FunctionalInterface
 public interface ActorFactory {
-
-    Object newInstance(Object arg);
+    <T extends Object> Object newInstance(T arg);
 }
