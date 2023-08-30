@@ -713,7 +713,7 @@ That is, data is saved at regular intervals asynchronously while the Actor is ac
 when the Actor suffers a deactivation, when it is turned off.
 
 These snapshots happen from time to time. And this time is configurable through the ***snapshotTimeout*** property of 
-the ***NamedActor*** or ***UnNamedActor*** class. 
+the ***NamedActor*** or ***UnNamedActor*** annotation. 
 However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action.
 And this can be done in the following way:
 
