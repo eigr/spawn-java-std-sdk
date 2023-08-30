@@ -90,7 +90,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v0.3.3</version>
+   <version>v0.3.4</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -124,7 +124,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.3.3</version>
+         <version>v0.3.4</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -576,8 +576,37 @@ Actors can also emit side effects to other Actors as part of their response.
 See an example:
 
 ```Java
+package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.workflows.SideEffect;
+import io.eigr.spawn.java.demo.domain.Domain;
 
+@NamedActor(name = "side_effect_actor", stateful = true, stateType = Domain.State.class)
+public class SideEffectActorExample {
+    @Action
+    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
+        // Create a ActorReference to send side effect message
+        ActorRef sideEffectReceiverActor = ctx.getSpawnSystem()
+                .createActorRef("spawn-system", "mike", "abs_actor");
+
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .state(updateState("java"))
+                .flow(SideEffect.to(sideEffectReceiverActor, "setLanguage", msg))
+                //.flow(SideEffect.to(emailSenderReceiverActor, "sendEmail", emailMessage))
+                //.flow(SideEffect.to(otherReceiverActor, "otherAction", otherMessage))
+                .noReply();
+    }
+
+    // ....
+}
 ```
 
 Side effects such as broadcast are not part of the response flow to the caller. They are request-asynchronous events that 
@@ -593,7 +622,36 @@ an action in another Actor.
 See an example:
 
 ```Java
+package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.workflows.Forward;
+import io.eigr.spawn.java.demo.domain.Domain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@NamedActor(name = "routing_actor", stateful = true, stateType = Domain.State.class)
+public class ForwardExample {
+   private static final Logger log = LoggerFactory.getLogger(ForwardExample.class);
+
+   @Action
+   public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
+      log.info("Received invocation. Message: {}. Context: {}", msg, ctx);
+      if (ctx.getState().isPresent()) {
+         log.info("State is present and value is {}", ctx.getState().get());
+      }
+      ActorRef forwardedActor = ctx.getSpawnSystem()
+              .createActorRef("spawn-system", "mike", "abs_actor");
+
+      return Value.at()
+              .flow(Forward.to(forwardedActor,"setLanguage"))
+              .noReply();
+   }
+}
 ```
 
 ### Pipe
@@ -606,7 +664,39 @@ In the end, just like in a Forward, it is the response of the last Actor in the 
 Example:
 
 ```Java
+package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.workflows.Pipe;
+import io.eigr.spawn.java.demo.domain.Domain;
+
+@NamedActor(name = "pipe_actor", stateful = true, stateType = Domain.State.class)
+public class PipeActorExample {
+
+    @Action
+    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
+        ActorRef pipeReceiverActor = ctx.getSpawnSystem()
+                .createActorRef("spawn-system", "joe");
+
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .flow(Pipe.to(pipeReceiverActor, "someAction"))
+                .state(updateState("java"))
+                .noReply();
+    }
+
+    private Domain.State updateState(String language) {
+        return Domain.State.newBuilder()
+                .addLanguages(language)
+                .build();
+    }
+}
 ```
 
 Forwards and pipes do not have an upper thread limit other than the request timeout.
@@ -622,8 +712,8 @@ during the moment of the Actor's deactivation.
 That is, data is saved at regular intervals asynchronously while the Actor is active and once synchronously 
 when the Actor suffers a deactivation, when it is turned off.
 
-These snapshots happen from time to time. And this time is configurable through the ***snapshot_timeout*** property of 
-the ***ActorSettings*** class. 
+These snapshots happen from time to time. And this time is configurable through the ***snapshotTimeout*** property of 
+the ***NamedActor*** or ***UnNamedActor*** class. 
 However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action.
 And this can be done in the following way:
 
@@ -735,6 +825,32 @@ name given to the actor that defines the ActorRef template.
 
 To better exemplify, let's first show the Actor's definition code and later how we would call this actor with a concrete 
 name at runtime:
+
+```java
+package io.eigr.spawn.java.demo;
+// omitted imports for brevity...
+
+@UnNamedActor(name = "abs_actor", stateful = true, stateType = Domain.State.class)
+public class AbstractActor {
+    @Action(inputType = Domain.Request.class)
+    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> context) {
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .state(updateState("java"))
+                .reply();
+    }
+
+    private Domain.State updateState(String language) {
+        return Domain.State.newBuilder()
+                .addLanguages(language)
+                .build();
+    }
+}
+```
+
+So you could define and call this actor at runtime like this:
 
 ```Java
 ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
