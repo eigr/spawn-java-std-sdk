@@ -741,7 +741,7 @@ public final class Joe {
 }
 ```
 
-The most important thing in this example is the use of the parameter checkpoint=True:
+The most important thing in this example is the use of the last parameter with the true value:
 
 ```Java
 .state(updateState("java"), true)
