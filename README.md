@@ -17,8 +17,7 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
     - [Call Unnamed Actors](#call-unnamed-actors)
     - [Async and other options](#async-calls-and-other-options)
 5. [Deploy](#deploy)
-    - [Packing with Containers](#packing-with-containers)
-    - [Defining an ActorSytem](#defining-an-actorsytem)
+    - [Defining an ActorSystem](#defining-an-actorsytem)
     - [Defining an ActorHost](#defining-an-actorhost)
     - [Activators](#activators)
 6. [Actor Model](#actor-model)
@@ -29,11 +28,14 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
 
 Spawn is a Stateful Serverless Runtime and Framework based on the [Actor Model](https://youtu.be/7erJ1DV_Tlo) and operates as a Service Mesh.
 
-Spawn's main goal is to remove the complexity in developing services or microservices, providing simple and intuitive APIs, as well as a declarative deployment and configuration model and based on a Serverless architecture and Actor Model.
-This leaves the developer to focus on developing the business domain while the platform deals with the complexities and infrastructure needed to support the scalable, resilient, distributed, and event-driven architecture that modern systems requires.
+Spawn's main goal is to remove the complexity in developing services or microservices, providing simple and intuitive APIs, 
+as well as a declarative deployment and configuration model and based on a Serverless architecture and Actor Model.
+This leaves the developer to focus on developing the business domain while the platform deals with the complexities and 
+infrastructure needed to support the scalable, resilient, distributed, and event-driven architecture that modern systems requires.
 
 Spawn is based on the sidecar proxy pattern to provide a polyglot Actor Model framework and platform.
-Spawn's technology stack, built on the [BEAM VM](https://www.erlang.org/blog/a-brief-beam-primer/) (Erlang's virtual machine) and [OTP](https://www.erlang.org/doc/design_principles/des_princ.html), provides support for different languages from its native Actor model.
+Spawn's technology stack, built on the [BEAM VM](https://www.erlang.org/blog/a-brief-beam-primer/) (Erlang's virtual machine) 
+and [OTP](https://www.erlang.org/doc/design_principles/des_princ.html), provides support for different languages from its native Actor model.
 
 For more information consult the main repository [documentation](https://github.com/eigr/spawn).
 
@@ -83,7 +85,16 @@ package: io.eigr.spawn.java.demo
 ```
 
 The second thing we have to do is add the spawn dependency to the project.
-We're also going to configure a few things for our application build to work, including compiling the protobuf files.
+
+```xml
+<dependency>
+   <groupId>com.github.eigr</groupId>
+   <artifactId>spawn-java-std-sdk</artifactId>
+   <version>v0.3.3</version>
+</dependency>
+```
+We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
+See below a full example of the pom.xml file:
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -113,7 +124,7 @@ We're also going to configure a few things for our application build to work, in
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.2.5</version>
+         <version>v0.3.3</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -189,6 +200,25 @@ We're also going to configure a few things for our application build to work, in
                </execution>
             </executions>
          </plugin>
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+               <execution>
+                  <id>add-test-sources</id>
+                  <phase>generate-test-sources</phase>
+                  <goals>
+                     <goal>add-test-source</goal>
+                  </goals>
+                  <configuration>
+                     <sources>
+                        <source>${project.build.directory}/generated-test-sources/protobuf</source>
+                     </sources>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
       </plugins>
    </build>
 </project>
@@ -200,8 +230,9 @@ Now it is necessary to download the dependencies via Maven:
 cd spawn-java-demo && mvn install
 ```
 
-So far it's all pretty boring and not really Spawn related so it's time to start playing for real.
-The first thing we're going to do is define a place to put our protobuf files. In the root of the project we will create a folder called protobuf and some subfolders
+So far it's all pretty boring and not really Spawn related, so it's time to start playing for real.
+The first thing we're going to do is define a place to put our protobuf files. In the root of the project we will create 
+a folder called protobuf and some sub folders
 
 ```shell
 mkdir -p src/main/proto/domain
@@ -294,7 +325,6 @@ to serve as your application's entrypoint and fill it with the following content
 package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.Spawn.SpawnSystem;
 
 public class App {
    public static void main(String[] args) throws Exception {
@@ -302,7 +332,7 @@ public class App {
               .create("spawn-system")
               .withPort(8091)
               .withProxyPort(9003)
-              .withActor(Joe.class)
+              .addActor(Joe.class)
               .build();
 
       spawnSystem.start();
@@ -316,7 +346,10 @@ Then:
 mvn compile && mvn package && java -jar target/spawn-java-demo-1.0-SNAPSHOT.jar 
 ```
 
-But of course you will need to locally run the Elixir proxy which will actually provide all the functionality for your Java application. One way to do this is to create a docker-compose file containing all the services that your application depends on, in this case, in addition to the Spawn proxy, it also has a database and possibly a nats broker if you want access to more advanced Spawn features.
+But of course you will need to locally run the Elixir proxy which will actually provide all the functionality for your Java application. 
+One way to do this is to create a docker-compose file containing all the services that your application depends on, 
+in this case, in addition to the Spawn proxy, it also has a database and possibly a nats broker if you want access to 
+more advanced Spawn features.
 
 ```docker-compose
 version: "3.8"
@@ -376,8 +409,6 @@ import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.NamedActor;
-import io.eigr.spawn.api.actors.annotations.TimerAction;
-import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.java.demo.domain.Domain;
 
 import java.util.Map;
@@ -404,11 +435,19 @@ public final class Joe {
 }
 ```
 
-In this case you need to register your Actor using the `addActorWithArgs` method like as follows: 
+Then you also need to register your Actor using the `addActorWithArgs` method like as follows: 
 
 ```java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.actors.ActorRef;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class App {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Map<String, String> actorConstructorArgs = new HashMap<>();
         actorConstructorArgs.put("someKey", "someValue");
         
@@ -424,25 +463,61 @@ public class App {
 }
 ```
 
+Spawn is based on kubernetes and containers, so you will need to generate a docker container for your application.
+There are many ways to do this, one of them is by adding Maven's jib plugin. 
+Add the following lines to your plugin's section in pom.xml file:
+
+```xml
+<plugin>
+    <groupId>com.google.cloud.tools</groupId>
+    <artifactId>jib-maven-plugin</artifactId>
+    <version>3.3.2</version>
+    <configuration>
+        <to>
+            <image>your-repo-here/spawn-java-demo</image>
+        </to>
+    </configuration>
+</plugin>
+```
+finally you will be able to create your container by running the following command in the root of your project:
+
+```shell
+mvn compile jib:build
+```
+
 And this is it to start! Now that you know the basics of local development, we can go a little further.
 
 ## Advanced Use Cases
 
-Spawn Actors abstract a huge amount of developer infrastructure and can be used for many different types of jobs. In the sections below we will demonstrate some of the features available in Spawn that contribute to the development of complex applications in a simplified way.
+Spawn Actors abstract a huge amount of developer infrastructure and can be used for many types of jobs. 
+In the sections below we will demonstrate some features available in Spawn that contribute to the development of 
+complex applications in a simplified way.
 
 ### Types of Actors
 
 First we need to understand how the various types of actors available in Spawn behave. Spawn defines the following types of Actors:
 
-* **Named Actors**: Named actors are actors whose name is defined at compile time. They also behave slightly differently than unnamed actors and pooled actors. Named actors when they are defined with the stateful parameter equal to True are immediately instantiated when they are registered at the beginning of the program, they can also only be referenced by the name given to them in their definition.
+* **Named Actors**: Named actors are actors whose name is defined at compile time. They also behave slightly differently 
+Then unnamed actors and pooled actors. Named actors when they are defined with the stateful parameter equal to True are 
+immediately instantiated when they are registered at the beginning of the program, they can also only be referenced by 
+the name given to them in their definition.
 
-* **Unnamed Actors**: Unlike named actors, unnamed actors are only created when they are named at runtime, that is, during program execution. Otherwise they behave like named actors.
+* **Unnamed Actors**: Unlike named actors, unnamed actors are only created when they are named at runtime, that is, 
+during program execution. Otherwise, they behave like named actors.
 
-* **Pooled Actors**: Pooled Actors, as the name suggests, are a collection of actors that are grouped under the same name assigned to them at compile time. Pooled actors are generally used when higher performance is needed and are also recommended for handling serverless loads.
+* **Pooled Actors**: Pooled Actors, as the name suggests, are a collection of actors that are grouped under the same name 
+assigned to them at compile time. Pooled actors are generally used when higher performance is needed and are also 
+recommended for handling serverless loads.
 
-Another important feature of Spawn Actors is that the lifecycle of each Actor is managed by the platform itself. This means that an Actor will exist when it is invoked and that it will be deactivated after an idle time in its execution. This pattern is known as [Virtual Actors](#virtual-actors) but Spawn's implementation differs from some other known frameworks like [Orleans](https://www.microsoft.com/en-us/research/project/orleans-virtual-actors/) or [Dapr](https://docs.dapr.io/developing-applications/building-blocks/actors/actors-overview/) by defining a specific behavior depending on the type of Actor (named, unnamed, pooled, and etc...).
+Another important feature of Spawn Actors is that the lifecycle of each Actor is managed by the platform itself. 
+This means that an Actor will exist when it is invoked and that it will be deactivated after an idle time in its execution. 
+This pattern is known as [Virtual Actors](#virtual-actors) but Spawn's implementation differs from some other known 
+frameworks like [Orleans](https://www.microsoft.com/en-us/research/project/orleans-virtual-actors/) or 
+[Dapr](https://docs.dapr.io/developing-applications/building-blocks/actors/actors-overview/) 
+by defining a specific behavior depending on the type of Actor (named, unnamed, pooled, and etc...).
 
-For example, named actors are instantiated the first time as soon as the host application registers them with the Spawn proxy. Whereas unnamed and pooled actors are instantiated the first time only when they receive their first invocation call.
+For example, named actors are instantiated the first time as soon as the host application registers them with the Spawn proxy. 
+Whereas unnamed and pooled actors are instantiated the first time only when they receive their first invocation call.
 
 ### Broadcast
 
@@ -455,7 +530,9 @@ To consume from a topic, you just need to configure the Actor annotation using t
 ```
 In the case above, the Actor `joe` was configured to receive events that are forwarded to the topic called `test`.
 
-To produce events in a topic, just use the Broadcast Workflow. The example below demonstrates a complete example of producing and consuming events. In this case, the same actor is the event consumer and producer, but in a more realistic scenario, different actors would be involved in these processes.
+To produce events in a topic, just use the Broadcast Workflow. The example below demonstrates a complete example of 
+producing and consuming events. In this case, the same actor is the event consumer and producer, but in a more realistic scenario, 
+different actors would be involved in these processes.
 
 ```Java
 package io.eigr.spawn.java.demo;
@@ -503,11 +580,15 @@ See an example:
 
 ```
 
-Side effects such as broadcast are not part of the response flow to the caller. They are request-asynchronous events that are emitted after the Actor's state has been saved in memory.
+Side effects such as broadcast are not part of the response flow to the caller. They are request-asynchronous events that 
+are emitted after the Actor's state has been saved in memory.
 
 ### Forward
 
-Actors can route some actions to other actors as part of their response. For example, sometimes you may want another Actor to be responsible for processing a message that another Actor has received. We call this forwarding and it occurs when we want to forward the input argument of a request that a specific Actor has received to the input of an action in another Actor.
+Actors can route some actions to other actors as part of their response. For example, sometimes you may want another 
+Actor to be responsible for processing a message that another Actor has received. We call this forwarding, 
+and it occurs when we want to forward the input argument of a request that a specific Actor has received to the input of 
+an action in another Actor.
 
 See an example:
 
@@ -541,23 +622,43 @@ during the moment of the Actor's deactivation.
 That is, data is saved at regular intervals asynchronously while the Actor is active and once synchronously 
 when the Actor suffers a deactivation, when it is turned off.
 
-These snapshots happen from time to time. And this time is configurable through the ***snapshot_timeout*** property of the ***ActorSettings*** class. 
+These snapshots happen from time to time. And this time is configurable through the ***snapshot_timeout*** property of 
+the ***ActorSettings*** class. 
 However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action.
 And this can be done in the following way:
 
 Example:
 
 ```Java
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.java.demo.domain.Domain;
 
+@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class)
+public final class Joe {
+    @Action(inputType = Domain.Request.class)
+    public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+        return Value.at()
+                .response(Domain.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .state(updateState("java"), true)
+                .reply();
+    }
+    // ...
+}
 ```
 
 The most important thing in this example is the use of the parameter checkpoint=True:
 
 ```Java
-
+.state(updateState("java"), true)
 ```
 
-It is this parameter that will indicate to the Spawn runtime that you want the data to be saved immediately after this Action is called back.
+It is this parameter that will indicate to the Spawn runtime that you want the data to be saved immediately after this 
+Action is called back.
 In most cases this strategy is completely unnecessary, as the default strategy is sufficient for most use cases. 
 But Spawn democratically lets you choose when you want your data persisted.
 
@@ -575,8 +676,7 @@ In this section we will deal with the internal ways of interacting with our acto
 For more details on the external ways to interact with your actors see the [Activators](#activators) section.
 
 In order to be able to call methods of an Actor, we first need to get a reference to the actor. This is done with the 
-help of the static method `create_actor_ref` of the `Spawn` class. This method accepts some arguments, 
-the most important being `system`, `actor_name` and `parent`.
+help of the static method `createAactorRef` of the `Spawn` class.
 
 In the sections below we will give some examples of how to invoke different types of actors in different ways.
 
@@ -652,20 +752,22 @@ The important part of the code above is the following snippet:
 ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
 ```
 
-These tells Spawn that this actor will actually be named at runtime. The name parameter in this case is just a reference 
-that will be used later so that we can actually create an instance of the real Actor.
+These tells Spawn that this actor will actually be named at runtime. The name parameter with value "mike" 
+in this case is just a reference to "abs_actor" Actor that will be used later 
+so that we can actually create an instance of the real Actor.
 
 ### Async calls and other options
 
 Basically Spawn can perform actor functions in two ways. Synchronously, where the callee waits for a response, 
 or asynchronously, where the callee doesn't care about the return value of the call. 
-In this context we should not confuse Spawn's asynchronous way with Java's concept of async because async for Spawn is 
+In this context we should not confuse Spawn's asynchronous way with Java's concept of async like Promises because async for Spawn is 
 just a fire-and-forget call.
 
-Therefore, to call an actor's function asynchronously, just inform the parameter async_mode with the value True:
+Therefore, to call an actor's function asynchronously, just inform the parameter async using the InvocationOpts class with the value true:
 
 ```Java
-
+InvocationOpts opts = InvocationOpts.builder().async(true).build();
+mike.invoke("setLanguage", msg, Domain.Reply.class, opts);
 ```
 
 ## Deploy
@@ -673,14 +775,7 @@ Therefore, to call an actor's function asynchronously, just inform the parameter
 See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more 
 details on how to deploy a Spawn application.
 
-### Packing with Containers
-
-Spawn is a k8s based runtime and therefore your workloads should be made up of containers.
-
-So all you need to do is create a container with your Java application. There are several tutorials on the internet that 
-can help you with this process and we will not go into detail in this document.
-
-### Defining an ActorSytem
+### Defining an ActorSystem
 
 See [Getting Started](https://github.com/eigr/spawn#getting-started) section from the main Spawn repository for more 
 details on how to define an ActorSystem.

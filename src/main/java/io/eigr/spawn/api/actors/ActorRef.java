@@ -45,8 +45,7 @@ public final class ActorRef {
             spawnActor();
         }
     }
-
-
+    
     public static ActorRef of(SpawnClient client, String system, String name) throws Exception {
         return new ActorRef(client, system, name);
     }
@@ -114,7 +113,8 @@ public final class ActorRef {
         this.client.spawn(req);
     }
 
-    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invokeActor(String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws Exception {
+    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invokeActor(
+            String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws Exception {
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
         if (options.isPresent()) {

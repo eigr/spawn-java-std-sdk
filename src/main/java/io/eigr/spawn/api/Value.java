@@ -6,6 +6,7 @@ import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,6 +15,8 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
 
     private S state;
     private R response;
+
+    private boolean checkpoint;
     private Optional<Broadcast<?>> broadcast;
     private Optional<Forward> forward;
     private Optional<Pipe> pipe;
@@ -24,6 +27,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     private Value() {
         this.state = null;
         this.response = null;
+        this.checkpoint = false;
         this.broadcast = Optional.empty();
         this.forward = Optional.empty();
         this.pipe = Optional.empty();
@@ -34,6 +38,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     private Value(
             R response,
             S state,
+            boolean checkpoint,
             Optional<Broadcast<?>> broadcast,
             Optional<Forward> forward,
             Optional<Pipe> pipe,
@@ -41,11 +46,16 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
             ResponseType type) {
         this.response = response;
         this.state = state;
+        this.checkpoint = checkpoint;
         this.broadcast = broadcast;
         this.forward = forward;
         this.pipe = pipe;
         this.effects = effects;
         this.type = type;
+    }
+
+    public static <S, V> Value at() {
+        return new Value();
     }
 
     public R getResponse() {
@@ -54,6 +64,10 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
 
     public S getState() {
         return state;
+    }
+
+    public boolean getCheckpoint() {
+        return checkpoint;
     }
 
     public Optional<Broadcast<?>> getBroadcast() {
@@ -76,10 +90,6 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         return type;
     }
 
-    public static <S, V> Value at() {
-        return new Value();
-    }
-
     public Value response(R value) {
         this.response = value;
         return this;
@@ -87,6 +97,12 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
 
     public Value state(S state) {
         this.state = state;
+        return this;
+    }
+
+    public Value state(S state, boolean checkpoint) {
+        this.state = state;
+        this.checkpoint = checkpoint;
         return this;
     }
 
@@ -106,11 +122,16 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     }
 
     public Value flow(SideEffect effect) {
+        List<SideEffect> ef;
         if (this.effects.isPresent()) {
-            List<SideEffect> ef = this.effects.get();
+            ef = this.effects.get();
             ef.add(effect);
-            this.effects = Optional.of(ef);
+        } else {
+            ef = new ArrayList<>();
+            ef.add(effect);
         }
+
+        this.effects = Optional.of(ef);
         return this;
     }
 
@@ -120,11 +141,11 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     }
 
     public Value reply() {
-        return new Value(this.response, this.state, this.broadcast, this.forward, this.pipe, this.effects, ResponseType.REPLY);
+        return new Value(this.response, this.state, this.checkpoint, this.broadcast, this.forward, this.pipe, this.effects, ResponseType.REPLY);
     }
 
     public Value noReply() {
-        return new Value(this.response, this.state, this.broadcast, this.forward, this.pipe, this.effects, ResponseType.NO_REPLY);
+        return new Value(this.response, this.state, this.checkpoint, this.broadcast, this.forward, this.pipe, this.effects, ResponseType.NO_REPLY);
     }
 
     public Value empty() {
@@ -135,6 +156,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     public String toString() {
         final StringBuilder sb = new StringBuilder("Value{");
         sb.append("state=").append(state);
+        sb.append("checkpoint=").append(checkpoint);
         sb.append(", value=").append(response);
         sb.append(", broadcast=").append(broadcast);
         sb.append(", forward=").append(forward);
@@ -152,6 +174,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         Value<?, ?> value = (Value<?, ?>) o;
         return Objects.equals(state, value.state) &&
                 Objects.equals(response, value.response) &&
+                Objects.equals(checkpoint, value.checkpoint) &&
                 Objects.equals(broadcast, value.broadcast) &&
                 Objects.equals(forward, value.forward) &&
                 Objects.equals(pipe, value.pipe) &&
@@ -161,7 +184,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
 
     @Override
     public int hashCode() {
-        return Objects.hash(state, response, broadcast, forward, pipe, effects, type);
+        return Objects.hash(state, response, checkpoint, broadcast, forward, pipe, effects, type);
     }
 
     enum ResponseType {

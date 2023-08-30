@@ -103,6 +103,7 @@ public final class ActorServiceHandler implements HttpHandler {
                         .setValue(encodedValue)
                         .setWorkflow(buildWorkflow(valueResponse))
                         .setUpdatedContext(updatedContext)
+                        .setCheckpoint(valueResponse.getCheckpoint())
                         .build();
             }
 
