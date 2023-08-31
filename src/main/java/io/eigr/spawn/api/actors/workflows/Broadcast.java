@@ -49,7 +49,7 @@ public final class Broadcast<T extends GeneratedMessageV3> {
         }
 
         if (this.channel.isPresent()) {
-            builder.setActionName(this.channel.get());
+            builder.setChannelGroup(this.channel.get());
         }
 
         if (Objects.isNull(this.payload)) {
