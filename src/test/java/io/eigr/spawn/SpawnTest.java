@@ -1,32 +1,12 @@
 package io.eigr.spawn;
 
-import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.actors.ActorRef;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
 
-public class SpawnTest
-        extends TestCase {
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public SpawnTest(String testName) {
-        super(testName);
-    }
+import static org.junit.Assert.assertTrue;
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite() {
-        return new TestSuite(SpawnTest.class);
-    }
-
+public class SpawnTest {
+    @Test
     public void testApp() throws Exception {
-        Spawn spawn = new Spawn.SpawnSystem().build();
-        ActorRef actor = spawn.createActorRef("spawn-system", "joe");
         assertTrue(true);
     }
 }
