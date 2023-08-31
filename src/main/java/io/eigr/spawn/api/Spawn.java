@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,24 +28,31 @@ import java.util.stream.Collectors;
  */
 public final class Spawn {
     private static final Logger log = LoggerFactory.getLogger(Spawn.class);
+    private static final String HTTP_ACTORS_ACTIONS_URI = "/api/v1/actors/actions";
 
     private final SpawnClient client;
 
     private final int port;
+
+    private String host;
+
     private final String proxyHost;
     private final int proxyPort;
     private final String system;
     private final List<Entity> entities;
 
-    private String host;
+    private Optional<Executor> optionalExecutor;
+
 
     private Spawn(SpawnSystem builder) {
         this.system = builder.system;
         this.entities = builder.entities;
         this.port = builder.port;
+        this.host = builder.host;
         this.proxyHost = builder.proxyHost;
         this.proxyPort = builder.proxyPort;
         this.client = builder.client;
+        this.optionalExecutor = builder.optionalExecutor;
     }
 
     public int getPort() {
@@ -78,9 +86,12 @@ public final class Spawn {
 
     private void startServer() throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", this.port), 0);
-        httpServer.createContext("/api/v1/actors/actions", new ActorServiceHandler(this, this.entities));
-        //httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
-        httpServer.setExecutor(Executors.newCachedThreadPool());
+        httpServer.createContext(HTTP_ACTORS_ACTIONS_URI, new ActorServiceHandler(this, this.entities));
+        if (this.optionalExecutor.isPresent()) {
+            httpServer.setExecutor(this.optionalExecutor.get());
+        } else {
+            httpServer.setExecutor(Executors.newCachedThreadPool());
+        }
         httpServer.start();
     }
 
@@ -201,9 +212,9 @@ public final class Spawn {
         return new StringJoiner(", ", Spawn.class.getSimpleName() + "[", "]")
                 .add("system='" + system + "'")
                 .add("port=" + port)
+                .add("host='" + host + "'")
                 .add("proxyHost='" + proxyHost + "'")
                 .add("proxyPort=" + proxyPort)
-                .add("host='" + host + "'")
                 .toString();
     }
 
@@ -212,9 +223,12 @@ public final class Spawn {
         private SpawnClient client;
         private final List<Entity> entities = new ArrayList<>();
         private int port = 8091;
+        private String host = "127.0.0.1";
         private String proxyHost = "127.0.0.1";
         private int proxyPort = 9001;
         private String system = "spawn-system";
+
+        private Optional<Executor> optionalExecutor;
 
         public SpawnSystem create(String system) {
             this.system = system;
@@ -226,6 +240,11 @@ public final class Spawn {
             return this;
         }
 
+        public SpawnSystem withHost(String host) {
+            this.host = host;
+            return this;
+        }
+
         public SpawnSystem withProxyHost(String host) {
             this.proxyHost = host;
             return this;
@@ -233,6 +252,11 @@ public final class Spawn {
 
         public SpawnSystem withProxyPort(int port) {
             this.proxyPort = port;
+            return this;
+        }
+
+        public SpawnSystem withHttpHandlerExecutor(Executor executor) {
+            this.optionalExecutor = Optional.ofNullable(executor);
             return this;
         }
 
