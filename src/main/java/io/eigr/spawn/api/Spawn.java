@@ -85,7 +85,7 @@ public final class Spawn {
     }
 
     private void startServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", this.port), 0);
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 0);
         httpServer.createContext(HTTP_ACTORS_ACTIONS_URI, new ActorServiceHandler(this, this.entities));
         if (this.optionalExecutor.isPresent()) {
             httpServer.setExecutor(this.optionalExecutor.get());
@@ -228,7 +228,7 @@ public final class Spawn {
         private int proxyPort = 9001;
         private String system = "spawn-system";
 
-        private Optional<Executor> optionalExecutor;
+        private Optional<Executor> optionalExecutor = Optional.empty();
 
         public SpawnSystem create(String system) {
             this.system = system;
@@ -256,7 +256,7 @@ public final class Spawn {
         }
 
         public SpawnSystem withHttpHandlerExecutor(Executor executor) {
-            this.optionalExecutor = Optional.ofNullable(executor);
+            this.optionalExecutor = Optional.of(executor);
             return this;
         }
 
