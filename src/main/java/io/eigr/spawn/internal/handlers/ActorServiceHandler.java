@@ -12,11 +12,11 @@ import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
-import io.eigr.spawn.api.exceptions.ActorInvokeException;
 import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
+import io.eigr.spawn.api.exceptions.ActorInvokeException;
 import io.eigr.spawn.internal.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,10 +63,10 @@ public final class ActorServiceHandler implements HttpHandler {
 
         if ("POST".equals(exchange.getRequestMethod())) {
             Protocol.ActorInvocationResponse response = handleRequest(exchange);
-            try(OutputStream os = exchange.getResponseBody()) {
+            try (OutputStream os = exchange.getResponseBody()) {
                 byte[] bytes = response.toByteArray();
                 exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
-                exchange.  sendResponseHeaders(200, bytes.length);
+                exchange.sendResponseHeaders(200, bytes.length);
                 os.write(bytes);
             }
         }
@@ -80,11 +80,12 @@ public final class ActorServiceHandler implements HttpHandler {
             ActorId actorId = actorInvocationRequest.getActor();
             String actor = actorId.getName();
             String system = actorId.getSystem();
+            String parent = actorId.getParent();
             String commandName = actorInvocationRequest.getActionName();
 
             Any value = actorInvocationRequest.getValue();
 
-            Optional<Value> maybeValueResponse = callAction(system, actor, commandName, value, context);
+            Optional<Value> maybeValueResponse = callAction(system, actor, parent, commandName, value, context);
             log.info("Actor {} return ActorInvocationResponse for command {}. Result value: {}",
                     actor, commandName, maybeValueResponse);
 
@@ -114,8 +115,8 @@ public final class ActorServiceHandler implements HttpHandler {
         throw new ActorInvokeException("Action result is null");
     }
 
-    private Optional<Value> callAction(String system, String actor, String commandName, Any value, Protocol.Context context) {
-        Optional<Entity> optionalEntity = getEntityByActor(actor);
+    private Optional<Value> callAction(String system, String actor, String parent, String commandName, Any value, Protocol.Context context) {
+        Optional<Entity> optionalEntity = getEntityByActor(actor, parent);
         if (optionalEntity.isPresent()) {
             Entity entity = optionalEntity.get();
 
@@ -183,9 +184,17 @@ public final class ActorServiceHandler implements HttpHandler {
         return constructor.newInstance();
     }
 
-    private Optional<Entity> getEntityByActor(String actor) {
-        return this.entities.stream()
+    private Optional<Entity> getEntityByActor(String actor, String parent) {
+        Optional<Entity> entity = this.entities.stream()
                 .filter(e -> e.getActorName().equalsIgnoreCase(actor))
+                .findFirst();
+
+        if (entity.isPresent()) {
+            return entity;
+        }
+
+        return this.entities.stream()
+                .filter(e -> e.getActorName().equalsIgnoreCase(parent))
                 .findFirst();
     }
 
