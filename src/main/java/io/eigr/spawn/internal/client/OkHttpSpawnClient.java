@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public final class OkHttpSpawnClient implements SpawnClient {
     private static final Logger log = LoggerFactory.getLogger(OkHttpSpawnClient.class);
@@ -20,13 +21,18 @@ public final class OkHttpSpawnClient implements SpawnClient {
     private final int proxyPort;
     private final OkHttpClient client;
 
-    //private SpawnProperties properties;
-
     public OkHttpSpawnClient(String system, String proxyHost, int proxyPort) {
         this.system = system;
         this.proxyHost = proxyHost;
         this.proxyPort = proxyPort;
-        this.client = new OkHttpClient();
+        this.client = new  OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .callTimeout(100, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .connectionPool(new ConnectionPool(256, 100, TimeUnit.SECONDS))
+                .build();
     }
 
     @Override
