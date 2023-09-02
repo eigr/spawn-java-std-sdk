@@ -157,7 +157,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         final StringBuilder sb = new StringBuilder("Value{");
         sb.append("state=").append(state);
         sb.append("checkpoint=").append(checkpoint);
-        sb.append(", value=").append(response);
+        sb.append(", response=").append(response);
         sb.append(", broadcast=").append(broadcast);
         sb.append(", forward=").append(forward);
         sb.append(", pipe=").append(pipe);

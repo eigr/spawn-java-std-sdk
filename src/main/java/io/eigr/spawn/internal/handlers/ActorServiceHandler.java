@@ -92,7 +92,13 @@ public final class ActorServiceHandler implements HttpHandler {
             if (maybeValueResponse.isPresent()) {
                 Value valueResponse = maybeValueResponse.get();
                 Any encodedState = Any.pack(valueResponse.getState());
-                Any encodedValue = Any.pack(valueResponse.getResponse());
+
+                Any encodedValue;
+                if (Objects.isNull(valueResponse.getResponse())){
+                    encodedValue = Any.pack(Protocol.Noop.getDefaultInstance());
+                }else {
+                    encodedValue = Any.pack(valueResponse.getResponse());
+                }
 
                 Protocol.Context updatedContext = Protocol.Context.newBuilder()
                         .setState(encodedState)
