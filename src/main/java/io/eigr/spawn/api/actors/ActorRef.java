@@ -91,19 +91,33 @@ public final class ActorRef {
     }
 
     public <T extends GeneratedMessageV3> void  invokeAsync(String cmd, Class<T> outputType) throws Exception {
-        invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.empty());
+        InvocationOpts opts = InvocationOpts.builder().async(true).build();
+        invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.of(opts));
     }
 
     public <T extends GeneratedMessageV3> void invokeAsync(String cmd, Class<T> outputType, InvocationOpts opts) throws Exception {
-        invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
+        InvocationOpts mergedOpts = InvocationOpts.builder()
+                .async(true)
+                .delay(opts.getDelay())
+                .scheduledTo(opts.getScheduledTo())
+                .build();
+
+        invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.ofNullable(mergedOpts));
     }
 
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String cmd, S value, Class<T> outputType) throws Exception {
-        invokeActor(cmd, value, outputType, Optional.empty());
+        InvocationOpts opts = InvocationOpts.builder().async(true).build();
+        invokeActor(cmd, value, outputType, Optional.of(opts));
     }
 
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String cmd, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
-        invokeActor(cmd, value, outputType, Optional.ofNullable(opts));
+        InvocationOpts mergedOpts = InvocationOpts.builder()
+                .async(true)
+                .delay(opts.getDelay())
+                .scheduledTo(opts.getScheduledTo())
+                .build();
+
+        invokeActor(cmd, value, outputType, Optional.of(mergedOpts));
     }
 
     public String getActorSystem() {
