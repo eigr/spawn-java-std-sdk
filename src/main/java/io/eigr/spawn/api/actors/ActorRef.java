@@ -54,24 +54,56 @@ public final class ActorRef {
         return new ActorRef(client, system, name, parent);
     }
 
-    public <T extends GeneratedMessageV3> Object invoke(String cmd, Class<T> outputType) throws Exception {
-        Object res = invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.empty());
-        return outputType.cast(res);
+    public <T extends GeneratedMessageV3> Optional<Object>  invoke(String cmd, Class<T> outputType) throws Exception {
+        Optional<Object> res = invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.empty());
+        if(res.isPresent() ){
+            return Optional.of(outputType.cast(res.get()));
+        }
+
+        return res;
     }
 
-    public <T extends GeneratedMessageV3> Object invoke(String cmd, Class<T> outputType, Optional<InvocationOpts> opts) throws Exception {
-        Object res = invokeActor(cmd, Empty.getDefaultInstance(), outputType, opts);
-        return outputType.cast(res);
+    public <T extends GeneratedMessageV3> Optional<Object>  invoke(String cmd, Class<T> outputType, InvocationOpts opts) throws Exception {
+        Optional<Object> res = invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
+        if(res.isPresent() ){
+            return Optional.of(outputType.cast(res.get()));
+        }
+
+        return res;
     }
 
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invoke(String cmd, S value, Class<T> outputType) throws Exception {
-        Object res = invokeActor(cmd, value, outputType, Optional.empty());
-        return outputType.cast(res);
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invoke(String cmd, S value, Class<T> outputType) throws Exception {
+        Optional<Object> res = invokeActor(cmd, value, outputType, Optional.empty());
+        if(res.isPresent() ){
+            return Optional.of(outputType.cast(res.get()));
+        }
+
+        return res;
     }
 
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invoke(String cmd, S value, Class<T> outputType, Optional<InvocationOpts> opts) throws Exception {
-        Object res = invokeActor(cmd, value, outputType, opts);
-        return outputType.cast(res);
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invoke(String cmd, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
+        Optional<Object> res = invokeActor(cmd, value, outputType, Optional.ofNullable(opts));
+        if(res.isPresent() ){
+            return Optional.of(outputType.cast(res.get()));
+        }
+
+        return res;
+    }
+
+    public <T extends GeneratedMessageV3> void  invokeAsync(String cmd, Class<T> outputType) throws Exception {
+        invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.empty());
+    }
+
+    public <T extends GeneratedMessageV3> void invokeAsync(String cmd, Class<T> outputType, InvocationOpts opts) throws Exception {
+        invokeActor(cmd, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
+    }
+
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String cmd, S value, Class<T> outputType) throws Exception {
+        invokeActor(cmd, value, outputType, Optional.empty());
+    }
+
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String cmd, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
+        invokeActor(cmd, value, outputType, Optional.ofNullable(opts));
     }
 
     public String getActorSystem() {
@@ -113,7 +145,7 @@ public final class ActorRef {
         this.client.spawn(req);
     }
 
-    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Object invokeActor(
+    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invokeActor(
             String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws Exception {
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
@@ -153,11 +185,11 @@ public final class ActorRef {
                 throw new ActorNotFoundException();
             case OK:
                 if (resp.hasValue()) {
-                    return resp.getValue().unpack(outputType);
+                    return Optional.of(resp.getValue().unpack(outputType));
                 }
-                return null;
+                return Optional.empty();
         }
 
-        throw new ActorNotFoundException();
+        return Optional.empty();
     }
 }

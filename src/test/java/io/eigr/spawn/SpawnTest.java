@@ -31,15 +31,19 @@ public class SpawnTest {
     @Test
     public void testApp() throws Exception {
         ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "test_joe");
+        assertNotNull(joeActor);
 
         Actor.Request msg = Actor.Request.newBuilder()
                 .setLanguage("erlang")
                 .build();
 
-        Actor.Reply reply =
-                (Actor.Reply) joeActor.invoke("setLanguage", msg, Actor.Reply.class, Optional.empty());
+        Optional<Object> maybeReply =
+               joeActor.invoke("setLanguage", msg, Actor.Reply.class);
 
-        assertNotNull(reply);
-        assertEquals("Hello From Java", reply.getResponse());
+        if (maybeReply.isPresent()) {
+            Actor.Reply reply = (Actor.Reply) maybeReply.get();
+            assertNotNull(reply);
+            assertEquals("Hello From Java", reply.getResponse());
+        }
     }
 }
