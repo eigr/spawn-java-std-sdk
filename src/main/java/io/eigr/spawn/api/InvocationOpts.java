@@ -15,11 +15,14 @@ import java.util.Optional;
 @NoArgsConstructor
 public class InvocationOpts {
 
-    private boolean async;
+    @Builder.Default
+    private boolean async = false;
 
-    private Optional<Long> delay;
+    @Builder.Default
+    private Optional<Long> delay = Optional.empty();
 
-    private Optional<LocalDateTime> scheduledTo;
+    @Builder.Default
+    private Optional<LocalDateTime> scheduledTo = Optional.empty();
 
     public long getScheduleTimeInLong() {
         if (scheduledTo.isPresent()) {
