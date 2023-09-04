@@ -513,8 +513,9 @@ recommended for handling serverless loads.
 
 ### Stateless Actors
 
-In addition to these types, Spawn also allows the developer to choose Stateful actors, who need to maintain the state, or Stateless, those who do not need to maintain the state.
-For this the developer just needs to make use of the correct annotation. For example I could declare a Serverless Actor using the following code:
+In addition to these types, Spawn also allows the developer to choose Stateful actors, who need to maintain the state, 
+or Stateless, those who do not need to maintain the state.
+For this the developer just needs to make use of the correct annotation. For example, I could declare a Serverless Actor using the following code:
 
 ```java
 package io.eigr.spawn.test.actors;
@@ -525,7 +526,7 @@ import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
 import io.eigr.spawn.java.test.domain.Actor;
 
-@StatelessNamedActor(name = "test_joe", channel = "test.channel")
+@StatelessNamedActor(name = "test_joe")
 public class JoeActor {
     @Action
     public Value hi(Actor.Request msg, ActorContext<?> context) {
@@ -619,7 +620,7 @@ import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.java.demo.domain.Domain;
 
-@StatefulNamedActor(name = "side_effect_actor", stateful = true, stateType = Domain.State.class)
+@StatefulNamedActor(name = "side_effect_actor", stateType = Domain.State.class)
 public class SideEffectActorExample {
     @Action
     public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
@@ -667,7 +668,7 @@ import io.eigr.spawn.java.demo.domain.Domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@StatefulNamedActor(name = "routing_actor", stateful = true, stateType = Domain.State.class)
+@StatefulNamedActor(name = "routing_actor", stateType = Domain.State.class)
 public class ForwardExample {
    private static final Logger log = LoggerFactory.getLogger(ForwardExample.class);
 
@@ -707,7 +708,7 @@ import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.java.demo.domain.Domain;
 
-@StatefulNamedActor(name = "pipe_actor", stateful = true, stateType = Domain.State.class)
+@StatefulNamedActor(name = "pipe_actor", stateType = Domain.State.class)
 public class PipeActorExample {
 
     @Action
