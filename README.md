@@ -7,6 +7,8 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
 2. [Getting Started](#getting-started)
 3. [Advanced Use Cases](#advanced-use-cases)
     - [Types of Actors](#types-of-actors)
+    - [Stateless Actors](#stateless-actors)
+    - [Considerations about Spawn actors](#considerations-about-spawn-actors)
     - [Broadcast](#broadcast)
     - [Side Effects](#side-effects)
     - [Forward](#forward)
@@ -90,7 +92,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v0.4.1</version>
+   <version>v0.5.0</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -124,7 +126,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.4.1</version>
+         <version>v0.5.0</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -286,12 +288,12 @@ package io.eigr.spawn.java.demo;
 import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.java.demo.domain.Domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@NamedActor(name = "joe", stateType = Domain.JoeState.class)
+@StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class)
 public class Joe {
    private static final Logger log = LoggerFactory.getLogger(Joe.class);
 
@@ -408,12 +410,12 @@ package io.eigr.spawn.java.demo;
 import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.java.demo.domain.Domain;
 
 import java.util.Map;
 
-@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
+@StatefulNamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
 public final class Joe {
     private final String someValue;
 
@@ -509,6 +511,37 @@ during program execution. Otherwise, they behave like named actors.
 assigned to them at compile time. Pooled actors are generally used when higher performance is needed and are also 
 recommended for handling serverless loads.
 
+### Stateless Actors
+
+In addition to these types, Spawn also allows the developer to choose Stateful actors, who need to maintain the state, or Stateless, those who do not need to maintain the state.
+For this the developer just needs to make use of the correct annotation. For example I could declare a Serverless Actor using the following code:
+
+```java
+package io.eigr.spawn.test.actors;
+
+import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
+import io.eigr.spawn.java.test.domain.Actor;
+
+@StatelessNamedActor(name = "test_joe", channel = "test.channel")
+public class JoeActor {
+    @Action
+    public Value hi(Actor.Request msg, ActorContext<?> context) {
+        return Value.at()
+                .response(Actor.Reply.newBuilder()
+                        .setResponse("Hello From Java")
+                        .build())
+                .reply();
+    }
+}
+```
+
+Other than that the same Named, UnNamed types are supported. Just use the StatelessNamed or StatelessUnNamed annotations.
+
+### Considerations about Spawn actors
+
 Another important feature of Spawn Actors is that the lifecycle of each Actor is managed by the platform itself. 
 This means that an Actor will exist when it is invoked and that it will be deactivated after an idle time in its execution. 
 This pattern is known as [Virtual Actors](#virtual-actors) but Spawn's implementation differs from some other known 
@@ -526,7 +559,7 @@ Actors in Spawn can subscribe to a thread and receive, as well as broadcast, eve
 To consume from a topic, you just need to configure the Actor annotation using the channel option as follows:
 
 ```Java
-@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
+@StatefulNamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
 ```
 In the case above, the Actor `joe` was configured to receive events that are forwarded to the topic called `test`.
 
@@ -540,7 +573,7 @@ package io.eigr.spawn.java.demo;
 import io.eigr.spawn.api.actors.workflows.Broadcast;
 // some imports omitted for brevity
 
-@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
+@StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class, channel = "test")
 public class Joe {
    @TimerAction(name = "hi", period = 60000)
    public Value hi(ActorContext<Domain.JoeState> context) {
@@ -582,11 +615,11 @@ import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.java.demo.domain.Domain;
 
-@NamedActor(name = "side_effect_actor", stateful = true, stateType = Domain.State.class)
+@StatefulNamedActor(name = "side_effect_actor", stateful = true, stateType = Domain.State.class)
 public class SideEffectActorExample {
     @Action
     public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
@@ -628,13 +661,13 @@ import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.java.demo.domain.Domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@NamedActor(name = "routing_actor", stateful = true, stateType = Domain.State.class)
+@StatefulNamedActor(name = "routing_actor", stateful = true, stateType = Domain.State.class)
 public class ForwardExample {
    private static final Logger log = LoggerFactory.getLogger(ForwardExample.class);
 
@@ -670,11 +703,11 @@ import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.java.demo.domain.Domain;
 
-@NamedActor(name = "pipe_actor", stateful = true, stateType = Domain.State.class)
+@StatefulNamedActor(name = "pipe_actor", stateful = true, stateType = Domain.State.class)
 public class PipeActorExample {
 
     @Action
@@ -713,7 +746,7 @@ That is, data is saved at regular intervals asynchronously while the Actor is ac
 when the Actor suffers a deactivation, when it is turned off.
 
 These snapshots happen from time to time. And this time is configurable through the ***snapshotTimeout*** property of 
-the ***NamedActor*** or ***UnNamedActor*** annotation. 
+the ***StatefulNamedActor*** or ***UnStatefulNamedActor*** annotation. 
 However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action.
 And this can be done in the following way:
 
@@ -723,10 +756,10 @@ Example:
 import io.eigr.spawn.api.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.java.demo.domain.Domain;
 
-@NamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class)
+@StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class)
 public final class Joe {
     @Action(inputType = Domain.Request.class)
     public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
@@ -743,8 +776,8 @@ public final class Joe {
 
 The most important thing in this example is the use of the last parameter with the true value:
 
-```Java
-.state(updateState("java"), true)
+```
+state(updateState("java"), true)
 ```
 
 It is this parameter that will indicate to the Spawn runtime that you want the data to be saved immediately after this 
@@ -781,7 +814,7 @@ ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
                 .setLanguage("erlang")
                 .build();
         Domain.Reply reply = 
-                (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
+                (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class);
 ```
 
 More detailed in complete main class:
@@ -813,7 +846,7 @@ public class App {
               .setLanguage("erlang")
               .build();
       Domain.Reply reply =
-              (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
+              (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class);
    }
 }
 ```
@@ -830,7 +863,7 @@ name at runtime:
 package io.eigr.spawn.java.demo;
 // omitted imports for brevity...
 
-@UnNamedActor(name = "abs_actor", stateful = true, stateType = Domain.State.class)
+@UnStatefulNamedActor(name = "abs_actor", stateful = true, stateType = Domain.State.class)
 public class AbstractActor {
     @Action(inputType = Domain.Request.class)
     public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> context) {
@@ -859,7 +892,7 @@ ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
                 .setLanguage("erlang")
                 .build();
         Domain.Reply reply = 
-                (Domain.Reply) mike.invoke("setLanguage", msg, Domain.Reply.class, Optional.empty());
+                (Domain.Reply) mike.invoke("setLanguage", msg, Domain.Reply.class);
 ```
 
 The important part of the code above is the following snippet:
@@ -879,11 +912,10 @@ or asynchronously, where the callee doesn't care about the return value of the c
 In this context we should not confuse Spawn's asynchronous way with Java's concept of async like Promises because async for Spawn is 
 just a fire-and-forget call.
 
-Therefore, to call an actor's function asynchronously, just inform the parameter async using the InvocationOpts class with the value true:
+Therefore, to call an actor's function asynchronously, just use the invokeAsync method:
 
 ```Java
-InvocationOpts opts = InvocationOpts.builder().async(true).build();
-mike.invoke("setLanguage", msg, Domain.Reply.class, opts);
+mike.invokeAsync("setLanguage", msg, Domain.Reply.class);
 ```
 
 ## Deploy
