@@ -1,6 +1,4 @@
-package io.eigr.spawn.api.actors.annotations;
-
-import com.google.protobuf.GeneratedMessageV3;
+package io.eigr.spawn.api.actors.annotations.stateless;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,19 +7,12 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NamedActor {
+public @interface StatelessPooledActor {
     String value() default "";
 
-    //@AliasFor("value")
     String name() default "";
 
-    boolean stateful() default true;
-
-    Class<? extends GeneratedMessageV3> stateType();
-
-    long deactivatedTimeout() default 60000;
-
-    long snapshotTimeout() default 50000;
+    long deactivatedTimeout() default 10000;
 
     String channel() default "";
 

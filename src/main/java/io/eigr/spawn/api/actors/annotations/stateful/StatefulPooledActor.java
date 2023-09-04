@@ -1,4 +1,4 @@
-package io.eigr.spawn.api.actors.annotations;
+package io.eigr.spawn.api.actors.annotations.stateful;
 
 import com.google.protobuf.GeneratedMessageV3;
 
@@ -9,13 +9,10 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface UnNamedActor {
+public @interface StatefulPooledActor {
     String value() default "";
 
-    //@AliasFor("value")
     String name() default "";
-
-    boolean stateful() default true;
 
     Class<? extends GeneratedMessageV3> stateType();
 

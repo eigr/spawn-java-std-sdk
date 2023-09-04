@@ -5,9 +5,12 @@ import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.actors.ActorRef;
-import io.eigr.spawn.api.actors.annotations.NamedActor;
-import io.eigr.spawn.api.actors.annotations.PooledActor;
-import io.eigr.spawn.api.actors.annotations.UnNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulPooledActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
 import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.client.SpawnClient;
@@ -33,14 +36,11 @@ public final class Spawn {
     private final SpawnClient client;
 
     private final int port;
-
-    private String host;
-
     private final String proxyHost;
     private final int proxyPort;
     private final String system;
     private final List<Entity> entities;
-
+    private String host;
     private Optional<Executor> optionalExecutor;
 
 
@@ -124,14 +124,20 @@ public final class Spawn {
 
     private Map<String, ActorOuterClass.Actor> getActors(List<Entity> entities) {
         return entities.stream().map(actorEntity -> {
-            ActorOuterClass.ActorSnapshotStrategy snapshotStrategy =
-                    ActorOuterClass.ActorSnapshotStrategy.newBuilder()
-                            .setTimeout(
-                                    ActorOuterClass.TimeoutStrategy.newBuilder()
-                                            .setTimeout(actorEntity.getSnapshotTimeout())
-                                            .build()
-                            )
-                            .build();
+            ActorOuterClass.ActorSnapshotStrategy snapshotStrategy;
+            if (actorEntity.isStateful()) {
+                snapshotStrategy =
+                        ActorOuterClass.ActorSnapshotStrategy.newBuilder()
+                                .setTimeout(
+                                        ActorOuterClass.TimeoutStrategy.newBuilder()
+                                                .setTimeout(actorEntity.getSnapshotTimeout())
+                                                .build()
+                                )
+                                .build();
+            } else {
+                snapshotStrategy = ActorOuterClass.ActorSnapshotStrategy.newBuilder().build();
+            }
+
 
             ActorOuterClass.ActorDeactivationStrategy deactivateStrategy =
                     ActorOuterClass.ActorDeactivationStrategy.newBuilder()
@@ -220,8 +226,8 @@ public final class Spawn {
 
     public static final class SpawnSystem {
 
-        private SpawnClient client;
         private final List<Entity> entities = new ArrayList<>();
+        private SpawnClient client;
         private int port = 8091;
         private String host = "127.0.0.1";
         private String proxyHost = "127.0.0.1";
@@ -282,38 +288,68 @@ public final class Spawn {
         }
 
         private Optional<Entity> getEntity(Class<?> actorKlass) {
-            if (Objects.nonNull(actorKlass.getAnnotation(NamedActor.class))) {
-                return Optional.of(Entity.fromAnnotationToEntity(
-                        actorKlass, actorKlass.getAnnotation(NamedActor.class), null, null));
+            Optional<Entity> maybeEntity = getStatefulEntity(actorKlass, null, null);
+
+            if (maybeEntity.isPresent()) {
+                return maybeEntity;
             }
 
-            if (Objects.nonNull(actorKlass.getAnnotation(UnNamedActor.class))) {
-                return Optional.of(Entity.fromAnnotationToEntity(
-                        actorKlass, actorKlass.getAnnotation(UnNamedActor.class), null, null));
-            }
-
-            if (Objects.nonNull(actorKlass.getAnnotation(PooledActor.class))) {
-                return Optional.of(Entity.fromAnnotationToEntity(
-                        actorKlass, actorKlass.getAnnotation(PooledActor.class), null, null));
+            maybeEntity = getStatelessEntity(actorKlass, null, null);
+            if (maybeEntity.isPresent()) {
+                return maybeEntity;
             }
 
             return Optional.empty();
         }
 
-        private Optional<Entity> getEntity(Class<?> actorType, Object arg, ActorFactory factory) {
-            if (Objects.nonNull(actorType.getAnnotation(NamedActor.class))) {
-                NamedActor annotation = actorType.getAnnotation(NamedActor.class);
-                return Optional.of(Entity.fromAnnotationToEntity(actorType, annotation, arg, factory));
+        private Optional<Entity> getEntity(Class<?> actorKlass, Object arg, ActorFactory factory) {
+            Optional<Entity> maybeEntity = getStatefulEntity(actorKlass, arg, factory);
+
+            if (maybeEntity.isPresent()) {
+                return maybeEntity;
             }
 
-            if (Objects.nonNull(actorType.getAnnotation(UnNamedActor.class))) {
-                UnNamedActor annotation = actorType.getAnnotation(UnNamedActor.class);
-                return Optional.of(Entity.fromAnnotationToEntity(actorType, annotation, arg, factory));
+            maybeEntity = getStatelessEntity(actorKlass, arg, factory);
+            if (maybeEntity.isPresent()) {
+                return maybeEntity;
             }
 
-            if (Objects.nonNull(actorType.getAnnotation(PooledActor.class))) {
-                PooledActor annotation = actorType.getAnnotation(PooledActor.class);
-                return Optional.of(Entity.fromAnnotationToEntity(actorType, annotation, arg, factory));
+            return Optional.empty();
+        }
+
+        private Optional<Entity> getStatefulEntity(Class<?> actorKlass, Object arg, ActorFactory factory) {
+            if (Objects.nonNull(actorKlass.getAnnotation(StatefulNamedActor.class))) {
+                return Optional.of(Entity.fromAnnotationToEntity(
+                        actorKlass, actorKlass.getAnnotation(StatefulNamedActor.class), arg, factory));
+            }
+
+            if (Objects.nonNull(actorKlass.getAnnotation(StatefulUnNamedActor.class))) {
+                return Optional.of(Entity.fromAnnotationToEntity(
+                        actorKlass, actorKlass.getAnnotation(StatefulUnNamedActor.class), arg, factory));
+            }
+
+            if (Objects.nonNull(actorKlass.getAnnotation(StatefulPooledActor.class))) {
+                return Optional.of(Entity.fromAnnotationToEntity(
+                        actorKlass, actorKlass.getAnnotation(StatefulPooledActor.class), arg, factory));
+            }
+
+            return Optional.empty();
+        }
+
+        private Optional<Entity> getStatelessEntity(Class<?> actorKlass, Object arg, ActorFactory factory) {
+            if (Objects.nonNull(actorKlass.getAnnotation(StatelessNamedActor.class))) {
+                return Optional.of(Entity.fromAnnotationToEntity(
+                        actorKlass, actorKlass.getAnnotation(StatelessNamedActor.class), arg, factory));
+            }
+
+            if (Objects.nonNull(actorKlass.getAnnotation(StatelessUnNamedActor.class))) {
+                return Optional.of(Entity.fromAnnotationToEntity(
+                        actorKlass, actorKlass.getAnnotation(StatelessUnNamedActor.class), arg, factory));
+            }
+
+            if (Objects.nonNull(actorKlass.getAnnotation(StatelessPooledActor.class))) {
+                return Optional.of(Entity.fromAnnotationToEntity(
+                        actorKlass, actorKlass.getAnnotation(StatelessPooledActor.class), arg, factory));
             }
 
             return Optional.empty();

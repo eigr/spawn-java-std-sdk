@@ -4,6 +4,12 @@ import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.actors.annotations.*;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulPooledActor;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
+import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -228,7 +234,7 @@ public final class Entity {
         return sb.toString();
     }
 
-    public static Entity fromAnnotationToEntity(Class<?> entity, NamedActor actor, Object arg, ActorFactory factory) {
+    public static Entity fromAnnotationToEntity(Class<?> entity, StatefulNamedActor actor, Object arg, ActorFactory factory) {
         String actorBeanName = entity.getSimpleName();
         String actorName;
         if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
@@ -240,7 +246,7 @@ public final class Entity {
         final ActorKind kind = ActorKind.NAMED;
         final long deactivateTimeout = actor.deactivatedTimeout();
         final long snapshotTimeout = actor.snapshotTimeout();
-        final boolean isStateful = actor.stateful();
+        final boolean isStateful = true;
         final Class stateType = actor.stateType();
         final int minPoolSize = actor.minPoolSize();
         final int maxPoolSize = actor.maxPoolSize();
@@ -271,7 +277,7 @@ public final class Entity {
         return entityType;
     }
 
-    public static Entity fromAnnotationToEntity(Class<?> entity, UnNamedActor actor, Object arg, ActorFactory factory) {
+    public static Entity fromAnnotationToEntity(Class<?> entity, StatefulUnNamedActor actor, Object arg, ActorFactory factory) {
         String actorBeanName = entity.getSimpleName();
         String actorName;
         if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
@@ -283,7 +289,7 @@ public final class Entity {
         final ActorKind kind = ActorKind.UNNAMED;
         final long deactivateTimeout = actor.deactivatedTimeout();
         final long snapshotTimeout = actor.snapshotTimeout();
-        final boolean isStateful = actor.stateful();
+        final boolean isStateful = true;
         final Class stateType = actor.stateType();
         final int minPoolSize = actor.minPoolSize();
         final int maxPoolSize = actor.maxPoolSize();
@@ -314,7 +320,7 @@ public final class Entity {
         return entityType;
     }
 
-    public static Entity fromAnnotationToEntity(Class<?> entity, PooledActor actor, Object arg, ActorFactory factory) {
+    public static Entity fromAnnotationToEntity(Class<?> entity, StatefulPooledActor actor, Object arg, ActorFactory factory) {
 
         String actorBeanName = entity.getSimpleName();
         String actorName;
@@ -327,7 +333,7 @@ public final class Entity {
         final ActorKind kind = ActorKind.POOLED;
         final long deactivateTimeout = actor.deactivatedTimeout();
         final long snapshotTimeout = actor.snapshotTimeout();
-        final boolean isStateful = actor.stateful();
+        final boolean isStateful = true;
         final Class stateType = actor.stateType();
         final int minPoolSize = actor.minPoolSize();
         final int maxPoolSize = actor.maxPoolSize();
@@ -345,6 +351,130 @@ public final class Entity {
                 isStateful,
                 deactivateTimeout,
                 snapshotTimeout,
+                actions,
+                timerActions,
+                minPoolSize,
+                maxPoolSize,
+                channel,
+                Optional.ofNullable(arg),
+                Optional.ofNullable(factory));
+
+        log.info("Registering PooledActor: {}", actorName);
+        log.debug("Registering Entity -> {}", entityType);
+        return entityType;
+    }
+
+    public static Entity fromAnnotationToEntity(Class<?> entity, StatelessNamedActor actor, Object arg, ActorFactory factory) {
+        String actorBeanName = entity.getSimpleName();
+        String actorName;
+        if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
+            actorName = actorBeanName;
+        } else {
+            actorName = actor.name();
+        }
+
+        final ActorKind kind = ActorKind.NAMED;
+        final long deactivateTimeout = actor.deactivatedTimeout();
+        final boolean isStateful = false;
+        final int minPoolSize = actor.minPoolSize();
+        final int maxPoolSize = actor.maxPoolSize();
+        final String channel = actor.channel();
+
+        final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
+        final Map<String, Entity.EntityMethod> timerActions = buildActions(entity, TimerAction.class);
+
+        Entity entityType = new Entity(
+                actorName,
+                entity,
+                getKind(kind),
+                null,
+                actorBeanName,
+                isStateful,
+                deactivateTimeout,
+                0,
+                actions,
+                timerActions,
+                minPoolSize,
+                maxPoolSize,
+                channel,
+                Optional.ofNullable(arg),
+                Optional.ofNullable(factory));
+
+        log.info("Registering NamedActor: {}", actorName);
+        log.debug("Registering Entity -> {}", entityType);
+        return entityType;
+    }
+
+    public static Entity fromAnnotationToEntity(Class<?> entity, StatelessUnNamedActor actor, Object arg, ActorFactory factory) {
+        String actorBeanName = entity.getSimpleName();
+        String actorName;
+        if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
+            actorName = actorBeanName;
+        } else {
+            actorName = actor.name();
+        }
+
+        final ActorKind kind = ActorKind.UNNAMED;
+        final long deactivateTimeout = actor.deactivatedTimeout();
+        final boolean isStateful = false;
+        final int minPoolSize = actor.minPoolSize();
+        final int maxPoolSize = actor.maxPoolSize();
+        final String channel = actor.channel();
+
+        final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
+        final Map<String, Entity.EntityMethod> timerActions = buildActions(entity, TimerAction.class);
+
+        Entity entityType = new Entity(
+                actorName,
+                entity,
+                getKind(kind),
+                null,
+                actorBeanName,
+                isStateful,
+                deactivateTimeout,
+                0,
+                actions,
+                timerActions,
+                minPoolSize,
+                maxPoolSize,
+                channel,
+                Optional.ofNullable(arg),
+                Optional.ofNullable(factory));
+
+        log.info("Registering UnNamedActor: {}", actorName);
+        log.debug("Registering Entity -> {}", entityType);
+        return entityType;
+    }
+
+    public static Entity fromAnnotationToEntity(Class<?> entity, StatelessPooledActor actor, Object arg, ActorFactory factory) {
+
+        String actorBeanName = entity.getSimpleName();
+        String actorName;
+        if ((Objects.isNull(actor.name()) || actor.name().isEmpty())) {
+            actorName = actorBeanName;
+        } else {
+            actorName = actor.name();
+        }
+
+        final ActorKind kind = ActorKind.POOLED;
+        final long deactivateTimeout = actor.deactivatedTimeout();
+        final boolean isStateful = false;
+        final int minPoolSize = actor.minPoolSize();
+        final int maxPoolSize = actor.maxPoolSize();
+        final String channel = actor.channel();
+
+        final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
+        final Map<String, Entity.EntityMethod> timerActions = buildActions(entity, TimerAction.class);
+
+        Entity entityType = new Entity(
+                actorName,
+                entity,
+                getKind(kind),
+                null,
+                actorBeanName,
+                isStateful,
+                deactivateTimeout,
+                0,
                 actions,
                 timerActions,
                 minPoolSize,

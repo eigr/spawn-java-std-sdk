@@ -35,9 +35,10 @@ import java.util.stream.Collectors;
 
 public final class ActorServiceHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(ActorServiceHandler.class);
-
     private static final int CACHE_MAXIMUM_SIZE = 10_000;
     private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
+
+    private static final String CONTENT_TYPE = "application/octet-stream";
 
     private final Spawn spawn;
     private final String system;
@@ -65,7 +66,7 @@ public final class ActorServiceHandler implements HttpHandler {
             Protocol.ActorInvocationResponse response = handleRequest(exchange);
             try (OutputStream os = exchange.getResponseBody()) {
                 byte[] bytes = response.toByteArray();
-                exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
+                exchange.getResponseHeaders().set("Content-Type", CONTENT_TYPE);
                 exchange.sendResponseHeaders(200, bytes.length);
                 os.write(bytes);
             }
@@ -91,7 +92,12 @@ public final class ActorServiceHandler implements HttpHandler {
 
             if (maybeValueResponse.isPresent()) {
                 Value valueResponse = maybeValueResponse.get();
-                Any encodedState = Any.pack(valueResponse.getState());
+
+                Protocol.Context.Builder updatedContextBuilder = Protocol.Context.newBuilder();
+                if (Objects.nonNull(valueResponse.getState())) {
+                    Any encodedState = Any.pack(valueResponse.getState());
+                    updatedContextBuilder.setState(encodedState);
+                }
 
                 Any encodedValue;
                 if (Objects.isNull(valueResponse.getResponse())){
@@ -100,16 +106,12 @@ public final class ActorServiceHandler implements HttpHandler {
                     encodedValue = Any.pack(valueResponse.getResponse());
                 }
 
-                Protocol.Context updatedContext = Protocol.Context.newBuilder()
-                        .setState(encodedState)
-                        .build();
-
                 return Protocol.ActorInvocationResponse.newBuilder()
                         .setActorName(actor)
                         .setActorSystem(system)
                         .setValue(encodedValue)
                         .setWorkflow(buildWorkflow(valueResponse))
-                        .setUpdatedContext(updatedContext)
+                        .setUpdatedContext(updatedContextBuilder.build())
                         .setCheckpoint(valueResponse.getCheckpoint())
                         .build();
             }
