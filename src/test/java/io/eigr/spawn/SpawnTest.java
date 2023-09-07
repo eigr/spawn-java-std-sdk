@@ -2,6 +2,7 @@ package io.eigr.spawn;
 
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.transport.TransportOpts;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.JoeActor;
 import org.junit.Before;
@@ -20,9 +21,13 @@ public class SpawnTest {
     public void before() throws Exception {
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system")
-                .withPort(8091)
-                .withProxyPort(9003)
                 .addActor(JoeActor.class)
+                .withTransportOpts(
+                        TransportOpts.builder()
+                                .port(8091)
+                                .proxyPort(9003)
+                                .build()
+                )
                 .build();
 
         spawnSystem.start();
@@ -38,7 +43,7 @@ public class SpawnTest {
                 .build();
 
         Optional<Object> maybeReply =
-               joeActor.invoke("setLanguage", msg, Actor.Reply.class);
+                joeActor.invoke("setLanguage", msg, Actor.Reply.class);
 
         if (maybeReply.isPresent()) {
             Actor.Reply reply = (Actor.Reply) maybeReply.get();

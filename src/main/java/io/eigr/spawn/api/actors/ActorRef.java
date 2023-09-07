@@ -1,5 +1,7 @@
 package io.eigr.spawn.api.actors;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
 import com.google.protobuf.GeneratedMessageV3;
@@ -10,48 +12,50 @@ import io.eigr.spawn.api.exceptions.ActorInvokeException;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
 import io.eigr.spawn.internal.client.SpawnClient;
 
+import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 public final class ActorRef {
+    private static final int CACHE_MAXIMUM_SIZE = 1_000;
+    private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
+    private static final Cache<ActorOuterClass.ActorId, ActorRef> ACTOR_REF_CACHE = Caffeine.newBuilder()
+            .maximumSize(CACHE_MAXIMUM_SIZE)
+            .expireAfterWrite(Duration.ofSeconds(CACHE_EXPIRE_AFTER_WRITE_SECONDS))
+            .build();
 
     private final ActorOuterClass.ActorId actorId;
 
-    private final String name;
-
-    private final String system;
-
-    private final Optional<String> parent;
-
     private final SpawnClient client;
 
-    private ActorRef(SpawnClient client, String system, String name) throws Exception {
+    private ActorRef(ActorOuterClass.ActorId actorId, SpawnClient client) {
         this.client = client;
-        this.system = system;
-        this.name = name;
-        this.parent = Optional.empty();
-        this.actorId = buildActorId();
-        if (this.parent.isPresent()){
-            spawnActor();
-        }
-    }
-
-    private ActorRef(SpawnClient client, String system, String name, String parent) throws Exception {
-        this.client = client;
-        this.system = system;
-        this.name = name;
-        this.parent = Optional.of(parent);
-        this.actorId = buildActorId();
-        if (this.parent.isPresent()){
-            spawnActor();
-        }
+        this.actorId = actorId;
     }
     
     public static ActorRef of(SpawnClient client, String system, String name) throws Exception {
-        return new ActorRef(client, system, name);
+        ActorOuterClass.ActorId actorId = buildActorId(system, name);
+        ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
+        if (Objects.nonNull(ref)){
+            return ref;
+        }
+
+        ref = new ActorRef(actorId, client);
+        ACTOR_REF_CACHE.put(actorId, ref);
+        return ref;
     }
 
     public static ActorRef of(SpawnClient client, String system, String name, String parent) throws Exception {
-        return new ActorRef(client, system, name, parent);
+        ActorOuterClass.ActorId actorId = buildActorId(system, name, parent);
+        ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
+        if (Objects.nonNull(ref)){
+            return ref;
+        }
+
+        spawnActor(actorId, client);
+        ref = new ActorRef(actorId, client);
+        ACTOR_REF_CACHE.put(actorId, ref);
+        return ref;
     }
 
     public <T extends GeneratedMessageV3> Optional<Object>  invoke(String cmd, Class<T> outputType) throws Exception {
@@ -121,42 +125,27 @@ public final class ActorRef {
     }
 
     public String getActorSystem() {
-        return this.system;
+        return this.actorId.getSystem();
     }
 
     public String getActorName() {
-        return this.name;
+        return this.actorId.getName();
     }
 
     public Optional<String> maybeActorParentName() {
-        return this.parent;
+        return Optional.ofNullable(this.actorId.getParent());
     }
 
     public String getActorParentName() {
-        return this.parent.get();
+        return this.actorId.getParent();
     }
 
-    public boolean isUnnamedActor() {
-        return Optional.empty().isPresent();
-    }
-
-    private ActorOuterClass.ActorId buildActorId() {
-        ActorOuterClass.ActorId.Builder actorIdBuilder = ActorOuterClass.ActorId.newBuilder()
-                .setSystem(this.system)
-                .setName(this.name);
-
-        if (this.parent.isPresent()) {
-            actorIdBuilder.setParent(this.parent.get());
+    public boolean isUnNamedActor() {
+        if (Objects.nonNull(this.actorId.getParent())) {
+            return true;
         }
 
-        return actorIdBuilder.build();
-    }
-
-    private void spawnActor() throws Exception {
-        Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
-                .addActors(this.actorId)
-                .build();
-        this.client.spawn(req);
+        return false;
     }
 
     private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invokeActor(
@@ -181,7 +170,7 @@ public final class ActorRef {
         Any commandArg = Any.pack(argument);
 
         invocationRequestBuilder
-                .setSystem(ActorOuterClass.ActorSystem.newBuilder().setName(this.system).build())
+                .setSystem(ActorOuterClass.ActorSystem.newBuilder().setName(this.actorId.getSystem()).build())
                 .setActor(actorRef)
                 .setActionName(cmd)
                 .setValue(commandArg)
@@ -194,7 +183,7 @@ public final class ActorRef {
             case ERROR:
             case UNRECOGNIZED:
                 throw new ActorInvokeException(
-                        String.format("Unknown error when trying to invoke Actor %s", this.name));
+                        String.format("Unknown error when trying to invoke Actor %s", this.getActorName()));
             case ACTOR_NOT_FOUND:
                 throw new ActorNotFoundException();
             case OK:
@@ -205,5 +194,28 @@ public final class ActorRef {
         }
 
         return Optional.empty();
+    }
+
+    private static ActorOuterClass.ActorId buildActorId(String system, String name) {
+        ActorOuterClass.ActorId.Builder actorIdBuilder = ActorOuterClass.ActorId.newBuilder()
+                .setSystem(system)
+                .setName(name);
+
+        return actorIdBuilder.build();
+    }
+
+    private static ActorOuterClass.ActorId buildActorId(String system, String name, String parent) {
+        return ActorOuterClass.ActorId.newBuilder()
+                .setSystem(system)
+                .setName(name)
+                .setParent(parent)
+                .build();
+    }
+
+    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws Exception {
+        Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
+                .addActors(actorId)
+                .build();
+        client.spawn(req);
     }
 }

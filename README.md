@@ -332,9 +332,35 @@ public class App {
    public static void main(String[] args) throws Exception {
       Spawn spawnSystem = new SpawnSystem()
               .create("spawn-system")
-              .withPort(8091)
-              .withProxyPort(9003)
               .addActor(Joe.class)
+              .build();
+
+      spawnSystem.start();
+   }
+}
+```
+
+Or passing transport options like:
+
+```Java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.transport.TransportOpts;
+
+public class App {
+   public static void main(String[] args) throws Exception {
+      TransportOpts opts = TransportOpts.builder()
+              .executor()
+              .port(8091)
+              .proxyPort(9003)
+              .executor(Executors.newVirtualThreadPerTaskExecutor()) // If you use java above 19 and use the --enable-preview flag when running the jvm
+              .build();
+      
+      Spawn spawnSystem = new SpawnSystem()
+              .create("spawn-system")
+              .addActor(Joe.class)
+              .withTransportOpts(opts)
               .build();
 
       spawnSystem.start();

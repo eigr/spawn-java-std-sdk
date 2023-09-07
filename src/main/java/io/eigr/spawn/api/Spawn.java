@@ -11,6 +11,7 @@ import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
+import io.eigr.spawn.api.transport.TransportOpts;
 import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.client.SpawnClient;
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,18 +41,17 @@ public final class Spawn {
     private final String system;
     private final List<Entity> entities;
     private String host;
-    private Optional<Executor> optionalExecutor;
-
+    private Executor executor;
 
     private Spawn(SpawnSystem builder) {
         this.system = builder.system;
         this.entities = builder.entities;
-        this.port = builder.port;
-        this.host = builder.host;
-        this.proxyHost = builder.proxyHost;
-        this.proxyPort = builder.proxyPort;
+        this.port = builder.transportOpts.getPort();
+        this.host = builder.transportOpts.getHost();
+        this.proxyHost = builder.transportOpts.getProxyHost();
+        this.proxyPort = builder.transportOpts.getProxyPort();
         this.client = builder.client;
-        this.optionalExecutor = builder.optionalExecutor;
+        this.executor = builder.transportOpts.getExecutor();
     }
 
     public int getPort() {
@@ -87,11 +86,7 @@ public final class Spawn {
     private void startServer() throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 0);
         httpServer.createContext(HTTP_ACTORS_ACTIONS_URI, new ActorServiceHandler(this, this.entities));
-        if (this.optionalExecutor.isPresent()) {
-            httpServer.setExecutor(this.optionalExecutor.get());
-        } else {
-            httpServer.setExecutor(Executors.newCachedThreadPool());
-        }
+        httpServer.setExecutor(this.executor);
         httpServer.start();
     }
 
@@ -228,41 +223,19 @@ public final class Spawn {
 
         private final List<Entity> entities = new ArrayList<>();
         private SpawnClient client;
-        private int port = 8091;
-        private String host = "127.0.0.1";
-        private String proxyHost = "127.0.0.1";
-        private int proxyPort = 9001;
         private String system = "spawn-system";
 
-        private Optional<Executor> optionalExecutor = Optional.empty();
+        private TransportOpts transportOpts = TransportOpts.builder().build();
 
         public SpawnSystem create(String system) {
             this.system = system;
             return this;
         }
 
-        public SpawnSystem withPort(int port) {
-            this.port = port;
-            return this;
-        }
-
-        public SpawnSystem withHost(String host) {
-            this.host = host;
-            return this;
-        }
-
-        public SpawnSystem withProxyHost(String host) {
-            this.proxyHost = host;
-            return this;
-        }
-
-        public SpawnSystem withProxyPort(int port) {
-            this.proxyPort = port;
-            return this;
-        }
-
-        public SpawnSystem withHttpHandlerExecutor(Executor executor) {
-            this.optionalExecutor = Optional.of(executor);
+        public SpawnSystem createFromEnv() {
+            String system = System.getenv("PROXY_ACTOR_SYSTEM_NAME");
+            Objects.requireNonNull(system, "To use createFromEnv it is necessary to have defined the environment variable PROXY_ACTOR_SYSTEM_NAME");
+            this.system = system;
             return this;
         }
 
@@ -282,8 +255,17 @@ public final class Spawn {
             return this;
         }
 
+        public SpawnSystem withTransportOpts(TransportOpts opts) {
+            this.transportOpts = opts;
+            return this;
+        }
+
         public Spawn build() {
-            this.client = new OkHttpSpawnClient(this.system, this.proxyHost, this.proxyPort);
+            this.client = new OkHttpSpawnClient(
+                    this.system,
+                    this.transportOpts.getProxyHost(),
+                    this.transportOpts.getProxyPort());
+
             return new Spawn(this);
         }
 
