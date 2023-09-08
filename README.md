@@ -351,7 +351,6 @@ import io.eigr.spawn.api.transport.TransportOpts;
 public class App {
    public static void main(String[] args) throws Exception {
       TransportOpts opts = TransportOpts.builder()
-              .executor()
               .port(8091)
               .proxyPort(9003)
               .executor(Executors.newVirtualThreadPerTaskExecutor()) // If you use java above 19 and use the --enable-preview flag when running the jvm
