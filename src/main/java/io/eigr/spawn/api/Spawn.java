@@ -4,7 +4,6 @@ import com.sun.net.httpserver.HttpServer;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.actors.ActorFactory;
-import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
@@ -69,14 +68,38 @@ public final class Spawn {
         return system;
     }
 
+    /**
+     * <p>This method is responsible for creating instances of the ActorRef class.
+     * See more about ActorRef in {@link io.eigr.spawn.api.InvocationOpts} class
+     * </p>
+     * @param system ActorSystem name of the actor that this ActorRef instance should represent
+     * @param name the name of the actor that this ActorRef instance should represent
+     * @return the ActorRef instance
+     * @since 0.0.1
+     */
     public ActorRef createActorRef(String system, String name) throws Exception {
         return ActorRef.of(this.client, system, name);
     }
 
+    /**
+     * <p>This method is responsible for creating instances of the ActorRef class when Actor is a UnNamed actor.
+     * See more about ActorRef in {@link io.eigr.spawn.api.InvocationOpts} class
+     * </p>
+     * @param system ActorSystem name of the actor that this ActorRef instance should represent
+     * @param name the name of the actor that this ActorRef instance should represent
+     * @param parent the name of the unnamed parent actor
+     * @return the ActorRef instance
+     * @since 0.0.1
+     */
     public ActorRef createActorRef(String system, String name, String parent) throws Exception {
         return ActorRef.of(this.client, system, name, parent);
     }
 
+    /**
+     * <p>This method Starts communication with the Spawn proxy.
+     * </p>
+     * @since 0.0.1
+     */
     public void start() throws Exception {
         startServer();
         registerActorSystem();
@@ -226,11 +249,25 @@ public final class Spawn {
 
         private TransportOpts transportOpts = TransportOpts.builder().build();
 
+        /**
+         * <p>Builder method that establishes the ActorSystem to which the application will be part.
+         * </p>
+         * @param system ActorSystem name of the actor that this ActorRef instance should represent
+         * @return the SpawnSystem instance
+         * @since 0.0.1
+         */
         public SpawnSystem create(String system) {
             this.system = system;
             return this;
         }
 
+        /**
+         * <p>Builder method that establishes the ActorSystem to which the application will be part.
+         * The name of the ActorSystem will be captured at runtime via an environment variable called PROXY_ACTOR_SYSTEM_NAME
+         * </p>
+         * @return the SpawnSystem instance
+         * @since 0.0.1
+         */
         public SpawnSystem createFromEnv() {
             String system = System.getenv("PROXY_ACTOR_SYSTEM_NAME");
             Objects.requireNonNull(system, "To use createFromEnv method it is necessary to have defined the environment variable PROXY_ACTOR_SYSTEM_NAME");
@@ -238,6 +275,13 @@ public final class Spawn {
             return this;
         }
 
+        /**
+         * <p>Constructor method that adds a new Actor to the Spawn proxy.
+         * </p>
+         * @param actorKlass the actor definition class
+         * @return the SpawnSystem instance
+         * @since 0.0.1
+         */
         public SpawnSystem withActor(Class<?> actorKlass) {
             Optional<Entity> maybeEntity = getEntity(actorKlass);
             if (maybeEntity.isPresent()) {
@@ -246,6 +290,16 @@ public final class Spawn {
             return this;
         }
 
+        /**
+         * <p>Constructor method that adds a new Actor to the Spawn proxy.
+         * Allows options to be passed to the class constructor. The constructor must consist of only one argument
+         * </p>
+         * @param actorKlass the actor definition class
+         * @param arg the object that will be passed as an argument to the constructor via the lambda fabric
+         * @param factory a lambda that constructs the instance of the Actor object
+         * @return the SpawnSystem instance
+         * @since 0.0.1
+         */
         public SpawnSystem withActor(Class<?> actorKlass, Object arg, ActorFactory factory) {
             Optional<Entity> maybeEntity = getEntity(actorKlass, arg, factory);
             if (maybeEntity.isPresent()) {
@@ -254,6 +308,12 @@ public final class Spawn {
             return this;
         }
 
+        /**
+         * @param opts TransportOpts instance with options for communicating with the proxy as well as other transport
+         *             settings such as the type of Executor to be used to handle incoming requests.
+         * @return the SpawnSystem instance
+         * @since 0.0.1
+         */
         public SpawnSystem withTransportOptions(TransportOpts opts) {
             this.transportOpts = opts;
             return this;

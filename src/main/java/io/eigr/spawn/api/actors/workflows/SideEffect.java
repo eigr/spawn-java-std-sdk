@@ -5,7 +5,7 @@ import com.google.protobuf.GeneratedMessageV3;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.InvocationOpts;
-import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.ActorRef;
 
 import java.util.Objects;
 import java.util.Optional;

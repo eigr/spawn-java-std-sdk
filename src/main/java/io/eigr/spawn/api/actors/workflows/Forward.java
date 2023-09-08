@@ -1,7 +1,7 @@
 package io.eigr.spawn.api.actors.workflows;
 
 import io.eigr.functions.protocol.Protocol;
-import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.ActorRef;
 
 import java.util.Objects;
 import java.util.StringJoiner;

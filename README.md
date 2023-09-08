@@ -462,29 +462,28 @@ public final class Joe {
 }
 ```
 
-Then you also need to register your Actor passing arguments like as follows: 
+Then you also need to register your Actor passing arguments like as follows:
 
 ```java
 package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.actors.ActorRef;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class App {
-    public static void main(String[] args) {
-        Map<String, String> actorConstructorArgs = new HashMap<>();
-        actorConstructorArgs.put("someKey", "someValue");
-        
-        Spawn spawnSystem = new Spawn.SpawnSystem()
-                .create("spawn-system")
-                .withActor(Joe.class, actorConstructorArgs, arg -> new Joe((Map<String, String>) arg))
-                .build();
+   public static void main(String[] args) {
+      Map<String, String> actorConstructorArgs = new HashMap<>();
+      actorConstructorArgs.put("someKey", "someValue");
 
-        spawnSystem.start();
-    }
+      Spawn spawnSystem = new Spawn.SpawnSystem()
+              .create("spawn-system")
+              .withActor(Joe.class, actorConstructorArgs, arg -> new Joe((Map<String, String>) arg))
+              .build();
+
+      spawnSystem.start();
+   }
 }
 ```
 
@@ -635,9 +634,9 @@ See an example:
 ```Java
 package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
@@ -683,7 +682,7 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.Forward;
@@ -725,7 +724,7 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.workflows.Pipe;
@@ -848,11 +847,9 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.Spawn.SpawnSystem;
-import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.java.demo.domain.Domain;
-
-import java.util.Optional;
 
 public class App {
    public static void main(String[] args) throws Exception {
@@ -860,10 +857,10 @@ public class App {
               .create("spawn-system")
               .withActor(Joe.class)
               .withTransportOptions(
-                 TransportOpts.builder()
-                         .port(8091)
-                         .proxyPort(9003)
-                         .build()
+                      TransportOpts.builder()
+                              .port(8091)
+                              .proxyPort(9003)
+                              .build()
               )
               .build();
 
@@ -944,7 +941,7 @@ just a fire-and-forget call.
 Therefore, to call an actor's function asynchronously, just use the invokeAsync method:
 
 ```Java
-mike.invokeAsync("setLanguage", msg, Domain.Reply.class);
+mike.invokeAsync("setLanguage", msg);
 ```
 
 ## Deploy
