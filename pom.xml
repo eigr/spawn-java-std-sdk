@@ -4,7 +4,7 @@
     <groupId>io.eigr.spawn</groupId>
     <artifactId>spawn-java-std-sdk</artifactId>
     <packaging>jar</packaging>
-    <version>0.5.2</version>
+    <version>0.6.2</version>
     <name>spawn-java-std-sdk</name>
     <url>http://maven.apache.org</url>
 
@@ -91,6 +91,27 @@
         </extensions>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.2</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
