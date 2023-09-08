@@ -1,4 +1,4 @@
-package io.eigr.spawn.api.transport;
+package io.eigr.spawn.api;
 
 import lombok.*;
 

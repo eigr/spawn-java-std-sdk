@@ -285,7 +285,7 @@ Populate this file with the following content:
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
@@ -332,7 +332,7 @@ public class App {
    public static void main(String[] args) throws Exception {
       Spawn spawnSystem = new SpawnSystem()
               .create("spawn-system")
-              .addActor(Joe.class)
+              .withActor(Joe.class)
               .build();
 
       spawnSystem.start();
@@ -346,21 +346,20 @@ Or passing transport options like:
 package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.transport.TransportOpts;
+import io.eigr.spawn.api.TransportOpts;
 
 public class App {
    public static void main(String[] args) throws Exception {
       TransportOpts opts = TransportOpts.builder()
-              .executor()
               .port(8091)
               .proxyPort(9003)
               .executor(Executors.newVirtualThreadPerTaskExecutor()) // If you use java above 19 and use the --enable-preview flag when running the jvm
               .build();
-      
+
       Spawn spawnSystem = new SpawnSystem()
               .create("spawn-system")
-              .addActor(Joe.class)
-              .withTransportOpts(opts)
+              .withActor(Joe.class)
+              .withTransportOptions(opts)
               .build();
 
       spawnSystem.start();
@@ -433,7 +432,7 @@ In this case, it is enough to declare a constructor that receives a single argum
 ```java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
@@ -443,27 +442,27 @@ import java.util.Map;
 
 @StatefulNamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
 public final class Joe {
-    private final String someValue;
+   private final String someValue;
 
-    public Joe(Map<String, String> args) {
-        this.someValue = args.get("someKey");
-    }
+   public Joe(Map<String, String> args) {
+      this.someValue = args.get("someKey");
+   }
 
-    @Action(inputType = Domain.Request.class)
-    public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .state(updateState("java"))
-                .reply();
-    }
+   @Action(inputType = Domain.Request.class)
+   public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+      return Value.at()
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .state(updateState("java"))
+              .reply();
+   }
 
-    // ...
+   // ...
 }
 ```
 
-Then you also need to register your Actor using the `addActorWithArgs` method like as follows: 
+Then you also need to register your Actor passing arguments like as follows: 
 
 ```java
 package io.eigr.spawn.java.demo;
@@ -481,9 +480,7 @@ public class App {
         
         Spawn spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system")
-                .withPort(8091)
-                .withProxyPort(9003)
-                .addActorWithArgs(Joe.class, actorConstructorArgs, arg -> new Joe((Map<String, String>) arg))
+                .withActor(Joe.class, actorConstructorArgs, arg -> new Joe((Map<String, String>) arg))
                 .build();
 
         spawnSystem.start();
@@ -546,7 +543,7 @@ For this the developer just needs to make use of the correct annotation. For exa
 ```java
 package io.eigr.spawn.test.actors;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
@@ -554,14 +551,14 @@ import io.eigr.spawn.java.test.domain.Actor;
 
 @StatelessNamedActor(name = "test_joe")
 public class JoeActor {
-    @Action
-    public Value hi(Actor.Request msg, ActorContext<?> context) {
-        return Value.at()
-                .response(Actor.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .reply();
-    }
+   @Action
+   public Value hi(Actor.Request msg, ActorContext<?> context) {
+      return Value.at()
+              .response(Actor.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .reply();
+   }
 }
 ```
 
@@ -638,7 +635,7 @@ See an example:
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
@@ -648,24 +645,24 @@ import io.eigr.spawn.java.demo.domain.Domain;
 
 @StatefulNamedActor(name = "side_effect_actor", stateType = Domain.State.class)
 public class SideEffectActorExample {
-    @Action
-    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
-        // Create a ActorReference to send side effect message
-        ActorRef sideEffectReceiverActor = ctx.getSpawnSystem()
-                .createActorRef("spawn-system", "mike", "abs_actor");
+   @Action
+   public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
+      // Create a ActorReference to send side effect message
+      ActorRef sideEffectReceiverActor = ctx.getSpawnSystem()
+              .createActorRef("spawn-system", "mike", "abs_actor");
 
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .state(updateState("java"))
-                .flow(SideEffect.to(sideEffectReceiverActor, "setLanguage", msg))
-                //.flow(SideEffect.to(emailSenderReceiverActor, "sendEmail", emailMessage))
-                //.flow(SideEffect.to(otherReceiverActor, "otherAction", otherMessage))
-                .noReply();
-    }
+      return Value.at()
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .state(updateState("java"))
+              .flow(SideEffect.to(sideEffectReceiverActor, "setLanguage", msg))
+              //.flow(SideEffect.to(emailSenderReceiverActor, "sendEmail", emailMessage))
+              //.flow(SideEffect.to(otherReceiverActor, "otherAction", otherMessage))
+              .noReply();
+   }
 
-    // ....
+   // ....
 }
 ```
 
@@ -684,7 +681,7 @@ See an example:
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
@@ -708,7 +705,7 @@ public class ForwardExample {
               .createActorRef("spawn-system", "mike", "abs_actor");
 
       return Value.at()
-              .flow(Forward.to(forwardedActor,"setLanguage"))
+              .flow(Forward.to(forwardedActor, "setLanguage"))
               .noReply();
    }
 }
@@ -726,7 +723,7 @@ Example:
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
@@ -737,25 +734,25 @@ import io.eigr.spawn.java.demo.domain.Domain;
 @StatefulNamedActor(name = "pipe_actor", stateType = Domain.State.class)
 public class PipeActorExample {
 
-    @Action
-    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
-        ActorRef pipeReceiverActor = ctx.getSpawnSystem()
-                .createActorRef("spawn-system", "joe");
+   @Action
+   public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
+      ActorRef pipeReceiverActor = ctx.getSpawnSystem()
+              .createActorRef("spawn-system", "joe");
 
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .flow(Pipe.to(pipeReceiverActor, "someAction"))
-                .state(updateState("java"))
-                .noReply();
-    }
+      return Value.at()
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .flow(Pipe.to(pipeReceiverActor, "someAction"))
+              .state(updateState("java"))
+              .noReply();
+   }
 
-    private Domain.State updateState(String language) {
-        return Domain.State.newBuilder()
-                .addLanguages(language)
-                .build();
-    }
+   private Domain.State updateState(String language) {
+      return Domain.State.newBuilder()
+              .addLanguages(language)
+              .build();
+   }
 }
 ```
 
@@ -780,7 +777,7 @@ And this can be done in the following way:
 Example:
 
 ```Java
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
@@ -788,16 +785,16 @@ import io.eigr.spawn.java.demo.domain.Domain;
 
 @StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class)
 public final class Joe {
-    @Action(inputType = Domain.Request.class)
-    public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .state(updateState("java"), true)
-                .reply();
-    }
-    // ...
+   @Action(inputType = Domain.Request.class)
+   public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+      return Value.at()
+              .response(Domain.Reply.newBuilder()
+                      .setResponse("Hello From Java")
+                      .build())
+              .state(updateState("java"), true)
+              .reply();
+   }
+   // ...
 }
 ```
 
@@ -852,6 +849,7 @@ package io.eigr.spawn.java.demo;
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.Spawn.SpawnSystem;
 import io.eigr.spawn.api.actors.ActorRef;
+import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.java.demo.domain.Domain;
 
 import java.util.Optional;
@@ -860,9 +858,13 @@ public class App {
    public static void main(String[] args) throws Exception {
       Spawn spawnSystem = new SpawnSystem()
               .create("spawn-system")
-              .withPort(8091)
-              .withProxyPort(9003)
               .withActor(Joe.class)
+              .withTransportOptions(
+                 TransportOpts.builder()
+                         .port(8091)
+                         .proxyPort(9003)
+                         .build()
+              )
               .build();
 
       spawnSystem.start();

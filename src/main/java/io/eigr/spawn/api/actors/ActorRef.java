@@ -10,7 +10,7 @@ import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.InvocationOpts;
 import io.eigr.spawn.api.exceptions.ActorInvokeException;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
-import io.eigr.spawn.internal.client.SpawnClient;
+import io.eigr.spawn.internal.transport.client.SpawnClient;
 
 import java.time.Duration;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package io.eigr.spawn.api;
+package io.eigr.spawn.api.actors;
 
 import com.google.protobuf.GeneratedMessageV3;
 import io.eigr.spawn.api.actors.workflows.Broadcast;

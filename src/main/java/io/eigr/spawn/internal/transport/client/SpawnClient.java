@@ -1,4 +1,4 @@
-package io.eigr.spawn.internal.client;
+package io.eigr.spawn.internal.transport.client;
 
 import io.eigr.functions.protocol.Protocol;
 

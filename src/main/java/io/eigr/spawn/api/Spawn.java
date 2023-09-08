@@ -11,11 +11,10 @@ import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
-import io.eigr.spawn.api.transport.TransportOpts;
 import io.eigr.spawn.internal.Entity;
-import io.eigr.spawn.internal.client.OkHttpSpawnClient;
-import io.eigr.spawn.internal.client.SpawnClient;
-import io.eigr.spawn.internal.handlers.ActorServiceHandler;
+import io.eigr.spawn.internal.transport.client.OkHttpSpawnClient;
+import io.eigr.spawn.internal.transport.client.SpawnClient;
+import io.eigr.spawn.internal.transport.server.ActorServiceHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -234,12 +233,12 @@ public final class Spawn {
 
         public SpawnSystem createFromEnv() {
             String system = System.getenv("PROXY_ACTOR_SYSTEM_NAME");
-            Objects.requireNonNull(system, "To use createFromEnv it is necessary to have defined the environment variable PROXY_ACTOR_SYSTEM_NAME");
+            Objects.requireNonNull(system, "To use createFromEnv method it is necessary to have defined the environment variable PROXY_ACTOR_SYSTEM_NAME");
             this.system = system;
             return this;
         }
 
-        public SpawnSystem addActor(Class<?> actorKlass) {
+        public SpawnSystem withActor(Class<?> actorKlass) {
             Optional<Entity> maybeEntity = getEntity(actorKlass);
             if (maybeEntity.isPresent()) {
                 this.entities.add(maybeEntity.get());
@@ -247,7 +246,7 @@ public final class Spawn {
             return this;
         }
 
-        public SpawnSystem addActorWithArgs(Class<?> actorKlass, Object arg, ActorFactory factory) {
+        public SpawnSystem withActor(Class<?> actorKlass, Object arg, ActorFactory factory) {
             Optional<Entity> maybeEntity = getEntity(actorKlass, arg, factory);
             if (maybeEntity.isPresent()) {
                 this.entities.add(maybeEntity.get());
@@ -255,7 +254,7 @@ public final class Spawn {
             return this;
         }
 
-        public SpawnSystem withTransportOpts(TransportOpts opts) {
+        public SpawnSystem withTransportOptions(TransportOpts opts) {
             this.transportOpts = opts;
             return this;
         }

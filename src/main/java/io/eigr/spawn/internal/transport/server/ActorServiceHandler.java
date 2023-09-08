@@ -1,4 +1,4 @@
-package io.eigr.spawn.internal.handlers;
+package io.eigr.spawn.internal.transport.server;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -9,7 +9,7 @@ import com.sun.net.httpserver.HttpHandler;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass.ActorId;
 import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.actors.workflows.Broadcast;
@@ -37,7 +37,6 @@ public final class ActorServiceHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(ActorServiceHandler.class);
     private static final int CACHE_MAXIMUM_SIZE = 10_000;
     private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
-
     private static final String CONTENT_TYPE = "application/octet-stream";
 
     private final Spawn spawn;
@@ -143,7 +142,8 @@ public final class ActorServiceHandler implements HttpHandler {
                 } else if (entity.getTimerActions().containsKey(commandName)) {
                     entityMethod = entity.getTimerActions().get(commandName);
                 } else {
-                    throw new ActorInvokeException(String.format("The Actor does not have the desired action: %s", commandName));
+                    throw new ActorInvokeException(
+                            String.format("The Actor does not have the desired action: %s", commandName));
                 }
 
                 final Method actorMethod = entityMethod.getMethod();

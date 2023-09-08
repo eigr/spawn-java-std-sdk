@@ -1,6 +1,6 @@
 package io.eigr.spawn.test.actors;
 
-import io.eigr.spawn.api.Value;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;

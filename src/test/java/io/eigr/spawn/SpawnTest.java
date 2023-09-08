@@ -2,7 +2,7 @@ package io.eigr.spawn;
 
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.actors.ActorRef;
-import io.eigr.spawn.api.transport.TransportOpts;
+import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.JoeActor;
 import org.junit.Before;
@@ -21,8 +21,8 @@ public class SpawnTest {
     public void before() throws Exception {
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system")
-                .addActor(JoeActor.class)
-                .withTransportOpts(
+                .withActor(JoeActor.class)
+                .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)
                                 .proxyPort(9003)
