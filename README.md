@@ -833,11 +833,12 @@ To invoke an actor named like the one we defined in section [Getting Started](#g
 ```Java
 ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
         
-        Domain.Request msg = Domain.Request.newBuilder()
-                .setLanguage("erlang")
-                .build();
-        Domain.Reply reply = 
-                (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class);
+Domain.Request msg = Domain.Request.newBuilder()
+       .setLanguage("erlang")
+       .build();
+        
+Optional<Object> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
+Domain.Reply reply = (Domain.Reply)maybeResponse.get();
 ```
 
 More detailed in complete main class:
@@ -871,8 +872,9 @@ public class App {
       Domain.Request msg = Domain.Request.newBuilder()
               .setLanguage("erlang")
               .build();
-      Domain.Reply reply =
-              (Domain.Reply) joeActor.invoke("setLanguage", msg, Domain.Reply.class);
+     
+      Optional<Object> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
+      Domain.Reply reply = (Domain.Reply)maybeResponse.get();
    }
 }
 ```
@@ -914,11 +916,12 @@ So you could define and call this actor at runtime like this:
 ```Java
 ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
         
-        Domain.Request msg = Domain.Request.newBuilder()
-                .setLanguage("erlang")
-                .build();
-        Domain.Reply reply = 
-                (Domain.Reply) mike.invoke("setLanguage", msg, Domain.Reply.class);
+Domain.Request msg = Domain.Request.newBuilder()
+       .setLanguage("erlang")
+       .build();
+
+Optional<Object> maybeResponse = mike.invoke("setLanguage", msg, Domain.Reply.class);
+Domain.Reply reply = (Domain.Reply)maybeResponse.get();
 ```
 
 The important part of the code above is the following snippet:
