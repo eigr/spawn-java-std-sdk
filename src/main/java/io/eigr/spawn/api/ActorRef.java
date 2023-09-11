@@ -91,8 +91,8 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<Object>  invoke(String action, Class<T> outputType) throws Exception {
-        Optional<Object> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.empty());
+    public <T extends GeneratedMessageV3> Optional<T>  invoke(String action, Class<T> outputType) throws Exception {
+        Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.empty());
         if(res.isPresent() ){
             return Optional.of(outputType.cast(res.get()));
         }
@@ -111,8 +111,8 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<Object>  invoke(String action, Class<T> outputType, InvocationOpts opts) throws Exception {
-        Optional<Object> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
+    public <T extends GeneratedMessageV3> Optional<T>  invoke(String action, Class<T> outputType, InvocationOpts opts) throws Exception {
+        Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
         if(res.isPresent() ){
             return Optional.of(outputType.cast(res.get()));
         }
@@ -130,8 +130,8 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invoke(String action, S value, Class<T> outputType) throws Exception {
-        Optional<Object> res = invokeActor(action, value, outputType, Optional.empty());
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws Exception {
+        Optional<T> res = invokeActor(action, value, outputType, Optional.empty());
         if(res.isPresent() ){
             return Optional.of(outputType.cast(res.get()));
         }
@@ -151,8 +151,8 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
-        Optional<Object> res = invokeActor(action, value, outputType, Optional.ofNullable(opts));
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
+        Optional<T> res = invokeActor(action, value, outputType, Optional.ofNullable(opts));
         if(res.isPresent() ){
             return Optional.of(outputType.cast(res.get()));
         }
@@ -248,7 +248,7 @@ public final class ActorRef {
         return false;
     }
 
-    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<Object> invokeActor(
+    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invokeActor(
             String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws Exception {
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 

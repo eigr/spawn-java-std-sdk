@@ -42,11 +42,11 @@ public class SpawnTest {
                 .setLanguage("erlang")
                 .build();
 
-        Optional<Object> maybeReply =
+        Optional<Actor.Reply> maybeReply =
                 joeActor.invoke("setLanguage", msg, Actor.Reply.class);
 
         if (maybeReply.isPresent()) {
-            Actor.Reply reply = (Actor.Reply) maybeReply.get();
+            Actor.Reply reply = maybeReply.get();
             assertNotNull(reply);
             assertEquals("Hello From Java", reply.getResponse());
         }
