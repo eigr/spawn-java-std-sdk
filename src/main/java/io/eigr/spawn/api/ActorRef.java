@@ -19,7 +19,6 @@ import java.util.Optional;
  * ActorRef is responsible for representing an instance of an Actor
  *
  * @author Adriano Santos
- *
  */
 public final class ActorRef {
     private static final int CACHE_MAXIMUM_SIZE = 1_000;
@@ -41,16 +40,17 @@ public final class ActorRef {
     /**
      * <p>This method is responsible for creating instances of the ActorRef class
      * </p>
+     *
      * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
      * @param system ActorSystem name of the actor that this ActorRef instance should represent
-     * @param name the name of the actor that this ActorRef instance should represent
+     * @param name   the name of the actor that this ActorRef instance should represent
      * @return the ActorRef instance
      * @since 0.0.1
      */
     protected static ActorRef of(SpawnClient client, String system, String name) throws Exception {
         ActorOuterClass.ActorId actorId = buildActorId(system, name);
         ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
-        if (Objects.nonNull(ref)){
+        if (Objects.nonNull(ref)) {
             return ref;
         }
 
@@ -62,9 +62,10 @@ public final class ActorRef {
     /**
      * <p>This method is responsible for creating instances of the ActorRef class when Actor is a UnNamed actor.
      * </p>
+     *
      * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
      * @param system ActorSystem name of the actor that this ActorRef instance should represent
-     * @param name the name of the actor that this ActorRef instance should represent
+     * @param name   the name of the actor that this ActorRef instance should represent
      * @param parent the name of the unnamed parent actor
      * @return the ActorRef instance
      * @since 0.0.1
@@ -72,7 +73,7 @@ public final class ActorRef {
     protected static ActorRef of(SpawnClient client, String system, String name, String parent) throws Exception {
         ActorOuterClass.ActorId actorId = buildActorId(system, name, parent);
         ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
-        if (Objects.nonNull(ref)){
+        if (Objects.nonNull(ref)) {
             return ref;
         }
 
@@ -82,18 +83,42 @@ public final class ActorRef {
         return ref;
     }
 
+    private static ActorOuterClass.ActorId buildActorId(String system, String name) {
+        ActorOuterClass.ActorId.Builder actorIdBuilder = ActorOuterClass.ActorId.newBuilder()
+                .setSystem(system)
+                .setName(name);
+
+        return actorIdBuilder.build();
+    }
+
+    private static ActorOuterClass.ActorId buildActorId(String system, String name, String parent) {
+        return ActorOuterClass.ActorId.newBuilder()
+                .setSystem(system)
+                .setName(name)
+                .setParent(parent)
+                .build();
+    }
+
+    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws Exception {
+        Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
+                .addActors(actorId)
+                .build();
+        client.spawn(req);
+    }
+
     /**
      * <p>This method synchronously invokes an action on the actor that this ActorRef instance represents through the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
-     * @param action name of the action to be called.
+     *
+     * @param action     name of the action to be called.
      * @param outputType the class that corresponds to the expected return type
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T>  invoke(String action, Class<T> outputType) throws Exception {
+    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType) throws Exception {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.empty());
-        if(res.isPresent() ){
+        if (res.isPresent()) {
             return Optional.of(outputType.cast(res.get()));
         }
 
@@ -104,16 +129,17 @@ public final class ActorRef {
      * <p>This method synchronously invokes an action on the actor that this ActorRef instance represents through the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
-     * @param action name of the action to be called.
+     *
+     * @param action     name of the action to be called.
      * @param outputType the class that corresponds to the expected return type
-     * @param opts options that can be passed during the invocation of the Action.
-     *             Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
+     * @param opts       options that can be passed during the invocation of the Action.
+     *                   Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T>  invoke(String action, Class<T> outputType, InvocationOpts opts) throws Exception {
+    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws Exception {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
-        if(res.isPresent() ){
+        if (res.isPresent()) {
             return Optional.of(outputType.cast(res.get()));
         }
 
@@ -124,15 +150,16 @@ public final class ActorRef {
      * <p>This method synchronously invokes an action on the actor that this ActorRef instance represents through the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
-     * @param action name of the action to be called.
-     * @param value the action argument object.
+     *
+     * @param action     name of the action to be called.
+     * @param value      the action argument object.
      * @param outputType the class that corresponds to the expected return type
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws Exception {
         Optional<T> res = invokeActor(action, value, outputType, Optional.empty());
-        if(res.isPresent() ){
+        if (res.isPresent()) {
             return Optional.of(outputType.cast(res.get()));
         }
 
@@ -143,17 +170,18 @@ public final class ActorRef {
      * <p>This method synchronously invokes an action on the actor that this ActorRef instance represents through the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
-     * @param action name of the action to be called.
-     * @param value the action argument object.
+     *
+     * @param action     name of the action to be called.
+     * @param value      the action argument object.
      * @param outputType the class that corresponds to the expected return type
-     * @param opts options that can be passed during the invocation of the Action.
-     *             Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
+     * @param opts       options that can be passed during the invocation of the Action.
+     *                   Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
         Optional<T> res = invokeActor(action, value, outputType, Optional.ofNullable(opts));
-        if(res.isPresent() ){
+        if (res.isPresent()) {
             return Optional.of(outputType.cast(res.get()));
         }
 
@@ -164,10 +192,11 @@ public final class ActorRef {
      * <p>This method asynchronously invokes an action on the actor that this ActorRef instance represents via the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
+     *
      * @param action name of the action to be called.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void  invokeAsync(String action) throws Exception {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action) throws Exception {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActor(action, Empty.getDefaultInstance(), null, Optional.of(opts));
     }
@@ -176,9 +205,10 @@ public final class ActorRef {
      * <p>This method asynchronously invokes an action on the actor that this ActorRef instance represents via the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
+     *
      * @param action name of the action to be called.
-     * @param opts options that can be passed during the invocation of the Action.
-     *             Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
+     * @param opts   options that can be passed during the invocation of the Action.
+     *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
     public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws Exception {
@@ -195,8 +225,9 @@ public final class ActorRef {
      * <p>This method asynchronously invokes an action on the actor that this ActorRef instance represents through the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
+     *
      * @param action name of the action to be called.
-     * @param value the action argument object.
+     * @param value  the action argument object.
      * @since 0.0.1
      */
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value) throws Exception {
@@ -208,10 +239,11 @@ public final class ActorRef {
      * <p>This method asynchronously invokes an action on the actor that this ActorRef instance represents through the Spawn Proxy.
      * Used when it is not necessary to send parameters to the Action.
      * </p>
+     *
      * @param action name of the action to be called.
-     * @param value the action argument object.
-     * @param opts options that can be passed during the invocation of the Action.
-     *             Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
+     * @param value  the action argument object.
+     * @param opts   options that can be passed during the invocation of the Action.
+     *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws Exception {
@@ -250,6 +282,8 @@ public final class ActorRef {
 
     private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invokeActor(
             String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws Exception {
+        Objects.requireNonNull(this.actorId, "ActorId cannot be null");
+
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
         if (options.isPresent()) {
@@ -282,8 +316,10 @@ public final class ActorRef {
             case UNKNOWN:
             case ERROR:
             case UNRECOGNIZED:
-                throw new ActorInvokeException(
-                        String.format("Unknown error when trying to invoke Actor %s", this.getActorName()));
+                String msg = String.format("Error when trying to invoke Actor %s. Details: %s",
+                        this.getActorName(), status.getMessage());
+
+                throw new ActorInvokeException(msg);
             case ACTOR_NOT_FOUND:
                 throw new ActorNotFoundException();
             case OK:
@@ -294,28 +330,5 @@ public final class ActorRef {
         }
 
         return Optional.empty();
-    }
-
-    private static ActorOuterClass.ActorId buildActorId(String system, String name) {
-        ActorOuterClass.ActorId.Builder actorIdBuilder = ActorOuterClass.ActorId.newBuilder()
-                .setSystem(system)
-                .setName(name);
-
-        return actorIdBuilder.build();
-    }
-
-    private static ActorOuterClass.ActorId buildActorId(String system, String name, String parent) {
-        return ActorOuterClass.ActorId.newBuilder()
-                .setSystem(system)
-                .setName(name)
-                .setParent(parent)
-                .build();
-    }
-
-    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws Exception {
-        Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
-                .addActors(actorId)
-                .build();
-        client.spawn(req);
     }
 }
