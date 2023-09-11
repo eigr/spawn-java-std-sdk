@@ -30,6 +30,6 @@ public class InvocationOpts {
             return ChronoUnit.MILLIS.between(LocalDateTime.now(), ldt);
         }
 
-        throw new IllegalArgumentException("ScheduledTo is null");
+        return 0;
     }
 }
