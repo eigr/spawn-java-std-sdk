@@ -16,7 +16,7 @@ import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
-import io.eigr.spawn.api.exceptions.ActorInvokeException;
+import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.internal.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +62,8 @@ public final class ActorServiceHandler implements HttpHandler {
         log.debug("Received Actor Action Request.");
 
         if ("POST".equals(exchange.getRequestMethod())) {
-            Protocol.ActorInvocationResponse response = handleRequest(exchange);
             try (OutputStream os = exchange.getResponseBody()) {
+                Protocol.ActorInvocationResponse response = handleRequest(exchange);
                 byte[] bytes = response.toByteArray();
                 exchange.getResponseHeaders().set("Content-Type", CONTENT_TYPE);
                 exchange.sendResponseHeaders(200, bytes.length);
@@ -116,13 +116,13 @@ public final class ActorServiceHandler implements HttpHandler {
             }
 
         } catch (Exception e) {
-            log.error("Error during handle request. Error: {}", e);
+            log.error("Error during handle request.", e);
         }
 
-        throw new ActorInvokeException("Action result is null");
+        throw new IOException("Action result is null");
     }
 
-    private Optional<Value> callAction(String system, String actor, String parent, String commandName, Any value, Protocol.Context context) {
+    private Optional<Value> callAction(String system, String actor, String parent, String commandName, Any value, Protocol.Context context) throws ActorInvocationException {
         Optional<Entity> optionalEntity = getEntityByActor(actor, parent);
         if (optionalEntity.isPresent()) {
             Entity entity = optionalEntity.get();
@@ -142,7 +142,7 @@ public final class ActorServiceHandler implements HttpHandler {
                 } else if (entity.getTimerActions().containsKey(commandName)) {
                     entityMethod = entity.getTimerActions().get(commandName);
                 } else {
-                    throw new ActorInvokeException(
+                    throw new ActorInvocationException(
                             String.format("The Actor does not have the desired action: %s", commandName));
                 }
 
@@ -164,12 +164,12 @@ public final class ActorServiceHandler implements HttpHandler {
                     final Object unpack = value.unpack(inputType);
                     return Optional.of((Value) actorMethod.invoke(actorRef, unpack, actorContext));
                 }
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new ActorInvocationException(e);
             } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException | NoSuchMethodException | InstantiationException e) {
-                throw new RuntimeException(e);
+                throw new ActorInvocationException(e);
+            } catch (NoSuchMethodException | InstantiationException e) {
+                throw new ActorInvocationException(e);
             }
         }
 

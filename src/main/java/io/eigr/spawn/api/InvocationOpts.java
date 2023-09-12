@@ -23,7 +23,7 @@ public class InvocationOpts {
     private Duration timeoutSeconds = Duration.ofSeconds(10);
 
     @Builder.Default
-    private Optional<Long> delay = Optional.empty();
+    private Optional<Long> delaySeconds = Optional.empty();
 
     @Builder.Default
     private Optional<LocalDateTime> scheduledTo = Optional.empty();
