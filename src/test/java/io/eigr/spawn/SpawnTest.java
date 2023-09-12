@@ -1,15 +1,15 @@
 package io.eigr.spawn;
 
-import io.eigr.spawn.api.InvocationOpts;
-import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.ActorRef;
+import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.TransportOpts;
+import io.eigr.spawn.api.exceptions.ActorCreationException;
+import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.JoeActor;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -36,7 +36,7 @@ public class SpawnTest {
     }
 
     @Test
-    public void testApp() throws Exception {
+    public void testApp() throws ActorCreationException, ActorInvocationException {
         ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "test_joe");
         assertNotNull(joeActor);
 

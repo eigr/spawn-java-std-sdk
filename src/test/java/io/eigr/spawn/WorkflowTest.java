@@ -8,6 +8,7 @@ import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
+import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.JoeActor;
 import org.junit.Before;
@@ -20,7 +21,7 @@ public class WorkflowTest {
     private ActorRef joeActorRef;
     private Spawn spawnSystem;
     @Before
-    public void before() throws Exception {
+    public void before() throws SpawnException {
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system")
                 .withActor(JoeActor.class)

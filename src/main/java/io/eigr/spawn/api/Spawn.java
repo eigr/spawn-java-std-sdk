@@ -10,6 +10,9 @@ import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
+import io.eigr.spawn.api.exceptions.ActorCreationException;
+import io.eigr.spawn.api.exceptions.ActorRegistrationException;
+import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.transport.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
@@ -75,9 +78,10 @@ public final class Spawn {
      * @param system ActorSystem name of the actor that this ActorRef instance should represent
      * @param name the name of the actor that this ActorRef instance should represent
      * @return the ActorRef instance
+     * @throws {@link io.eigr.spawn.api.exceptions.ActorCreationException}
      * @since 0.0.1
      */
-    public ActorRef createActorRef(String system, String name) throws Exception {
+    public ActorRef createActorRef(String system, String name) throws ActorCreationException {
         return ActorRef.of(this.client, system, name);
     }
 
@@ -89,9 +93,10 @@ public final class Spawn {
      * @param name the name of the actor that this ActorRef instance should represent
      * @param parent the name of the unnamed parent actor
      * @return the ActorRef instance
+     * @throws {@link io.eigr.spawn.api.exceptions.ActorCreationException}
      * @since 0.0.1
      */
-    public ActorRef createActorRef(String system, String name, String parent) throws Exception {
+    public ActorRef createActorRef(String system, String name, String parent) throws ActorCreationException {
         return ActorRef.of(this.client, system, name, parent);
     }
 
@@ -105,14 +110,18 @@ public final class Spawn {
         registerActorSystem();
     }
 
-    private void startServer() throws IOException {
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 0);
-        httpServer.createContext(HTTP_ACTORS_ACTIONS_URI, new ActorServiceHandler(this, this.entities));
-        httpServer.setExecutor(this.executor);
-        httpServer.start();
+    private void startServer() throws SpawnException {
+        try {
+            HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 0);
+            httpServer.createContext(HTTP_ACTORS_ACTIONS_URI, new ActorServiceHandler(this, this.entities));
+            httpServer.setExecutor(this.executor);
+            httpServer.start();
+        }catch (IOException ex) {
+            throw new SpawnException(ex);
+        }
     }
 
-    private void registerActorSystem() throws Exception {
+    private void registerActorSystem() throws ActorRegistrationException {
         ActorOuterClass.Registry registry = ActorOuterClass.Registry.newBuilder()
                 .putAllActors(getActors(this.entities))
                 .build();
