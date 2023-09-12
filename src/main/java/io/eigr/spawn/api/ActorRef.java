@@ -203,7 +203,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws SpawnException {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws ActorInvocationException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delaySeconds(opts.getDelaySeconds())
@@ -223,7 +223,7 @@ public final class ActorRef {
      * @param value  the action argument object.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value) throws SpawnException {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value) throws ActorInvocationException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActor(action, value, null, Optional.of(opts));
     }
@@ -239,7 +239,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws SpawnException {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws ActorInvocationException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delaySeconds(opts.getDelaySeconds())
@@ -275,7 +275,7 @@ public final class ActorRef {
     }
 
     private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invokeActor(
-            String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws SpawnException {
+            String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws ActorInvocationException {
         Objects.requireNonNull(this.actorId, "ActorId cannot be null");
 
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
@@ -314,7 +314,7 @@ public final class ActorRef {
                         this.getActorName(), status.getMessage());
                 throw new ActorInvocationException(msg);
             case ACTOR_NOT_FOUND:
-                throw new ActorNotFoundException("Actor not found.");
+                throw new ActorInvocationException("Actor not found.");
             case OK:
                 if (resp.hasValue() && Objects.nonNull(outputType)) {
                     try {
