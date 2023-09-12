@@ -17,7 +17,8 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
 4. [Using Actors](#using-actors)
     - [Call Named Actors](#call-named-actors)
     - [Call Unnamed Actors](#call-unnamed-actors)
-    - [Async and other options](#async-calls-and-other-options)
+    - [Async](#async)
+    - [Timeouts](#timeouts)
 5. [Deploy](#deploy)
     - [Defining an ActorSystem](#defining-an-actorsytem)
     - [Defining an ActorHost](#defining-an-actorhost)
@@ -92,7 +93,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v0.6.2</version>
+   <version>v0.6.5</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -126,7 +127,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.6.2</version>
+         <version>v0.6.5</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -837,8 +838,8 @@ Domain.Request msg = Domain.Request.newBuilder()
        .setLanguage("erlang")
        .build();
         
-Optional<Object> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
-Domain.Reply reply = (Domain.Reply)maybeResponse.get();
+Optional<Domain.Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
+Domain.Reply reply = maybeResponse.get();
 ```
 
 More detailed in complete main class:
@@ -874,7 +875,7 @@ public class App {
               .build();
      
       Optional<Object> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
-      Domain.Reply reply = (Domain.Reply)maybeResponse.get();
+      Domain.Reply reply = maybeResponse.get();
    }
 }
 ```
@@ -920,8 +921,8 @@ Domain.Request msg = Domain.Request.newBuilder()
        .setLanguage("erlang")
        .build();
 
-Optional<Object> maybeResponse = mike.invoke("setLanguage", msg, Domain.Reply.class);
-Domain.Reply reply = (Domain.Reply)maybeResponse.get();
+Optional<Domain.Reply> maybeResponse = mike.invoke("setLanguage", msg, Domain.Reply.class);
+Domain.Reply reply = maybeResponse.get();
 ```
 
 The important part of the code above is the following snippet:
@@ -934,7 +935,7 @@ These tells Spawn that this actor will actually be named at runtime. The name pa
 in this case is just a reference to "abs_actor" Actor that will be used later 
 so that we can actually create an instance of the real Actor.
 
-### Async calls and other options
+### Async
 
 Basically Spawn can perform actor functions in two ways. Synchronously, where the callee waits for a response, 
 or asynchronously, where the callee doesn't care about the return value of the call. 
@@ -945,6 +946,45 @@ Therefore, to call an actor's function asynchronously, just use the invokeAsync 
 
 ```Java
 mike.invokeAsync("setLanguage", msg);
+```
+
+### Timeouts
+
+It is possible to change the request waiting timeout using the invocation options as below:
+
+```Java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.api.ActorRef;
+import io.eigr.spawn.api.InvocationOpts;
+import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.TransportOpts;
+import io.eigr.spawn.java.demo.domain.Domain;
+
+import java.util.Optional;
+
+public class App {
+   public static void main(String[] args) throws Exception {
+      Spawn spawnSystem = new Spawn.SpawnSystem()
+              .create("spawn-system")
+              .withActor(Joe.class)
+              .build();
+
+      spawnSystem.start();
+
+      ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+
+      Domain.Request msg = Domain.Request.newBuilder()
+              .setLanguage("erlang")
+              .build();
+
+      InvocationOpts opts = InvocationOpts.builder()
+              .timeoutSeconds(Duration.ofSeconds(30))
+              .build();
+      
+      Optional<Domain.Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class, opts);
+   }
+}
 ```
 
 ## Deploy

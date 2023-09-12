@@ -12,6 +12,8 @@ import io.eigr.spawn.api.exceptions.ActorNotFoundException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -216,6 +218,7 @@ public final class ActorRef {
                 .async(true)
                 .delay(opts.getDelay())
                 .scheduledTo(opts.getScheduledTo())
+                .timeoutSeconds(opts.getTimeoutSeconds())
                 .build();
 
         invokeActor(action, Empty.getDefaultInstance(), null, Optional.ofNullable(mergedOpts));
@@ -251,6 +254,7 @@ public final class ActorRef {
                 .async(true)
                 .delay(opts.getDelay())
                 .scheduledTo(opts.getScheduledTo())
+                .timeoutSeconds(opts.getTimeoutSeconds())
                 .build();
 
         invokeActor(action, value, null, Optional.of(mergedOpts));
@@ -286,6 +290,7 @@ public final class ActorRef {
 
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
+        Map<String, String> metadata = new HashMap<>();
         if (options.isPresent()) {
             InvocationOpts opts = options.get();
             invocationRequestBuilder.setAsync(opts.isAsync());
@@ -295,6 +300,8 @@ public final class ActorRef {
             } else if (opts.getScheduledTo().isPresent()) {
                 invocationRequestBuilder.setScheduledTo(opts.getScheduleTimeInLong());
             }
+
+            metadata.put("request-timeout", String.valueOf(opts.getTimeout()));
         }
 
         final ActorOuterClass.Actor actorRef = ActorOuterClass.Actor.newBuilder()
@@ -303,11 +310,14 @@ public final class ActorRef {
 
         Any commandArg = Any.pack(argument);
 
+
+
         invocationRequestBuilder
                 .setSystem(ActorOuterClass.ActorSystem.newBuilder().setName(this.actorId.getSystem()).build())
                 .setActor(actorRef)
                 .setActionName(cmd)
                 .setValue(commandArg)
+                .putAllMetadata(metadata)
                 .build();
 
         Protocol.InvocationResponse resp = this.client.invoke(invocationRequestBuilder.build());

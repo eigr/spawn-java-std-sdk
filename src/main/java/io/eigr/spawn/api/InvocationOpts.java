@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -19,6 +20,9 @@ public class InvocationOpts {
     private boolean async = false;
 
     @Builder.Default
+    private Duration timeoutSeconds = Duration.ofSeconds(10);
+
+    @Builder.Default
     private Optional<Long> delay = Optional.empty();
 
     @Builder.Default
@@ -31,5 +35,9 @@ public class InvocationOpts {
         }
 
         return 0;
+    }
+
+    public long getTimeout() {
+        return this.timeoutSeconds.toMillis();
     }
 }
