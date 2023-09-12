@@ -13,6 +13,8 @@ import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -203,8 +205,9 @@ public final class ActorRef {
     public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws SpawnException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
-                .delay(opts.getDelay())
+                .delaySeconds(opts.getDelaySeconds())
                 .scheduledTo(opts.getScheduledTo())
+                .timeoutSeconds(opts.getTimeoutSeconds())
                 .build();
 
         invokeActor(action, Empty.getDefaultInstance(), null, Optional.ofNullable(mergedOpts));
@@ -238,8 +241,9 @@ public final class ActorRef {
     public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws SpawnException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
-                .delay(opts.getDelay())
+                .delaySeconds(opts.getDelaySeconds())
                 .scheduledTo(opts.getScheduledTo())
+                .timeoutSeconds(opts.getTimeoutSeconds())
                 .build();
 
         invokeActor(action, value, null, Optional.of(mergedOpts));
@@ -275,9 +279,11 @@ public final class ActorRef {
 
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
+        Map<String, String> metadata = new HashMap<>();
         options.ifPresent(opts -> {
             invocationRequestBuilder.setAsync(opts.isAsync());
-            opts.getDelay().ifPresent(invocationRequestBuilder::setScheduledTo);
+            metadata.put("request-timeout", String.valueOf(opts.getTimeout()));
+            opts.getDelaySeconds().ifPresent(invocationRequestBuilder::setScheduledTo);
             // 'scheduledTo' override 'delay' if both is set.
             opts.getScheduledTo()
                     .ifPresent(scheduleTo -> invocationRequestBuilder.setScheduledTo(opts.getScheduleTimeInLong()));
@@ -294,6 +300,7 @@ public final class ActorRef {
                 .setActor(actorRef)
                 .setActionName(cmd)
                 .setValue(commandArg)
+                .putAllMetadata(metadata)
                 .build();
 
         Protocol.InvocationResponse resp = this.client.invoke(invocationRequestBuilder.build());

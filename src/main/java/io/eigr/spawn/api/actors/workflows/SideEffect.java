@@ -43,14 +43,12 @@ public final class SideEffect<T extends GeneratedMessageV3> {
     public Protocol.SideEffect build() {
         Protocol.InvocationRequest.Builder requestBuilder = Protocol.InvocationRequest.newBuilder();
 
-        if (this.opts.isPresent()) {
-            InvocationOpts options = this.opts.get();
-            if (options.getDelay().isPresent() && !options.getScheduledTo().isPresent()) {
-                requestBuilder.setScheduledTo(options.getDelay().get());
-            } else if (options.getScheduledTo().isPresent()) {
-                requestBuilder.setScheduledTo(options.getScheduleTimeInLong());
-            }
-        }
+        opts.ifPresent(invocationOpts -> {
+            invocationOpts.getDelaySeconds().ifPresent(requestBuilder::setScheduledTo);
+            // 'scheduledTo' override 'delay' if both is set.
+            invocationOpts.getScheduledTo()
+                    .ifPresent(scheduleTo -> requestBuilder.setScheduledTo(invocationOpts.getScheduleTimeInLong()));
+        });
 
         requestBuilder.setSystem(ActorOuterClass.ActorSystem.newBuilder()
                         .setName(this.actor.getActorSystem())
