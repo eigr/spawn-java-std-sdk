@@ -1,6 +1,6 @@
 package io.eigr.spawn.api.exceptions;
 
-public final class ActorInvokeException extends IllegalStateException {
+public final class ActorInvokeException extends SpawnException {
 
     public ActorInvokeException() {}
     public ActorInvokeException(String message) {

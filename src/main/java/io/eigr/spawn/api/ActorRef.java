@@ -9,6 +9,7 @@ import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.exceptions.ActorInvokeException;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
+import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
 
 import java.time.Duration;
@@ -47,7 +48,7 @@ public final class ActorRef {
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, String system, String name) throws Exception {
+    protected static ActorRef of(SpawnClient client, String system, String name) throws SpawnException {
         ActorOuterClass.ActorId actorId = buildActorId(system, name);
         ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
@@ -70,7 +71,7 @@ public final class ActorRef {
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, String system, String name, String parent) throws Exception {
+    protected static ActorRef of(SpawnClient client, String system, String name, String parent) throws SpawnException {
         ActorOuterClass.ActorId actorId = buildActorId(system, name, parent);
         ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
@@ -99,7 +100,7 @@ public final class ActorRef {
                 .build();
     }
 
-    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws Exception {
+    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws SpawnException {
         Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
                 .addActors(actorId)
                 .build();
@@ -116,13 +117,10 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType) throws Exception {
+    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType) throws SpawnException {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.empty());
-        if (res.isPresent()) {
-            return Optional.of(outputType.cast(res.get()));
-        }
+        return res.map(outputType::cast);
 
-        return res;
     }
 
     /**
@@ -137,13 +135,10 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws Exception {
+    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws SpawnException {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
-        if (res.isPresent()) {
-            return Optional.of(outputType.cast(res.get()));
-        }
+        return res.map(outputType::cast);
 
-        return res;
     }
 
     /**
@@ -157,13 +152,10 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws Exception {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws SpawnException {
         Optional<T> res = invokeActor(action, value, outputType, Optional.empty());
-        if (res.isPresent()) {
-            return Optional.of(outputType.cast(res.get()));
-        }
+        return res.map(outputType::cast);
 
-        return res;
     }
 
     /**
@@ -179,13 +171,10 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws Exception {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws SpawnException {
         Optional<T> res = invokeActor(action, value, outputType, Optional.ofNullable(opts));
-        if (res.isPresent()) {
-            return Optional.of(outputType.cast(res.get()));
-        }
+        return res.map(outputType::cast);
 
-        return res;
     }
 
     /**
@@ -196,7 +185,7 @@ public final class ActorRef {
      * @param action name of the action to be called.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action) throws Exception {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action) throws SpawnException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActor(action, Empty.getDefaultInstance(), null, Optional.of(opts));
     }
@@ -211,7 +200,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws Exception {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws SpawnException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delay(opts.getDelay())
@@ -230,7 +219,7 @@ public final class ActorRef {
      * @param value  the action argument object.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value) throws Exception {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value) throws SpawnException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActor(action, value, null, Optional.of(opts));
     }
@@ -246,7 +235,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws Exception {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws SpawnException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delay(opts.getDelay())
@@ -281,21 +270,18 @@ public final class ActorRef {
     }
 
     private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invokeActor(
-            String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws Exception {
+            String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws SpawnException {
         Objects.requireNonNull(this.actorId, "ActorId cannot be null");
 
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
-        if (options.isPresent()) {
-            InvocationOpts opts = options.get();
+        options.ifPresent(opts -> {
             invocationRequestBuilder.setAsync(opts.isAsync());
-
-            if (opts.getDelay().isPresent() && !opts.getScheduledTo().isPresent()) {
-                invocationRequestBuilder.setScheduledTo(opts.getDelay().get());
-            } else if (opts.getScheduledTo().isPresent()) {
-                invocationRequestBuilder.setScheduledTo(opts.getScheduleTimeInLong());
-            }
-        }
+            opts.getDelay().ifPresent(invocationRequestBuilder::setScheduledTo);
+            // 'scheduledTo' override 'delay' if both is set.
+            opts.getScheduledTo()
+                    .ifPresent(scheduleTo -> invocationRequestBuilder.setScheduledTo(opts.getScheduleTimeInLong()));
+        });
 
         final ActorOuterClass.Actor actorRef = ActorOuterClass.Actor.newBuilder()
                 .setId(this.actorId)
@@ -318,13 +304,16 @@ public final class ActorRef {
             case UNRECOGNIZED:
                 String msg = String.format("Error when trying to invoke Actor %s. Details: %s",
                         this.getActorName(), status.getMessage());
-
                 throw new ActorInvokeException(msg);
             case ACTOR_NOT_FOUND:
                 throw new ActorNotFoundException();
             case OK:
                 if (resp.hasValue() && Objects.nonNull(outputType)) {
-                    return Optional.of(resp.getValue().unpack(outputType));
+                    try {
+                        return Optional.of(resp.getValue().unpack(outputType));
+                    } catch (Exception e) {
+                        throw new SpawnException(e);
+                    }
                 }
                 return Optional.empty();
         }

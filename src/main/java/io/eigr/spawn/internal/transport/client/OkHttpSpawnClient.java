@@ -1,10 +1,12 @@
 package io.eigr.spawn.internal.transport.client;
 
 import io.eigr.functions.protocol.Protocol;
+import io.eigr.spawn.api.exceptions.SpawnException;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +27,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
         this.system = system;
         this.proxyHost = proxyHost;
         this.proxyPort = proxyPort;
-        this.client = new  OkHttpClient.Builder()
+        this.client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
@@ -36,7 +38,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
     }
 
     @Override
-    public Protocol.RegistrationResponse register(Protocol.RegistrationRequest registration) throws Exception {
+    public Protocol.RegistrationResponse register(Protocol.RegistrationRequest registration) throws SpawnException {
         RequestBody body = RequestBody.create(registration.toByteArray(), MediaType.parse(SPAWN_MEDIA_TYPE));
 
         Request request = new Request.Builder().url(makeURLFrom(SPAWN_REGISTER_URI)).post(body).build();
@@ -49,12 +51,12 @@ public final class OkHttpSpawnClient implements SpawnClient {
                     ).bytes());
         } catch (Exception e) {
             log.error("Error registering Actors", e);
-            throw new Exception(e);
+            throw new SpawnException(e);
         }
     }
 
     @Override
-    public Protocol.SpawnResponse spawn(Protocol.SpawnRequest registration) throws Exception {
+    public Protocol.SpawnResponse spawn(Protocol.SpawnRequest registration) throws SpawnException {
         RequestBody body = RequestBody.create(registration.toByteArray(), MediaType.parse(SPAWN_MEDIA_TYPE));
 
         Request request = new Request.Builder()
@@ -69,12 +71,12 @@ public final class OkHttpSpawnClient implements SpawnClient {
                     ).bytes());
         } catch (Exception e) {
             log.error("Error registering Actors", e);
-            throw new Exception(e);
+            throw new SpawnException(e);
         }
     }
 
     @Override
-    public Protocol.InvocationResponse invoke(Protocol.InvocationRequest request) throws Exception {
+    public Protocol.InvocationResponse invoke(Protocol.InvocationRequest request) throws SpawnException {
         RequestBody body = RequestBody.create(
                 request.toByteArray(), MediaType.parse(SPAWN_MEDIA_TYPE));
 
@@ -84,10 +86,13 @@ public final class OkHttpSpawnClient implements SpawnClient {
                 .build();
 
         Call invocationCall = client.newCall(invocationRequest);
-        Response callInvocationResponse = invocationCall.execute();
-
-        return Protocol.InvocationResponse
-                .parseFrom(Objects.requireNonNull(callInvocationResponse.body()).bytes());
+        try {
+            Response callInvocationResponse = invocationCall.execute();
+            return Protocol.InvocationResponse
+                    .parseFrom(Objects.requireNonNull(callInvocationResponse.body()).bytes());
+        } catch (Exception e) {
+            throw new SpawnException(e);
+        }
     }
 
     private String makeURLForSystemAndActor(String systemName, String actorName) {
