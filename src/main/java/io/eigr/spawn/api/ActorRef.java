@@ -9,6 +9,7 @@ import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
+import io.eigr.spawn.api.exceptions.ActorNotFoundException;
 import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
 
@@ -119,7 +120,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType) throws SpawnException {
+    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.empty());
         return res.map(outputType::cast);
 
@@ -137,7 +138,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws SpawnException {
+    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
         return res.map(outputType::cast);
 
@@ -154,7 +155,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws SpawnException {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, value, outputType, Optional.empty());
         return res.map(outputType::cast);
 
@@ -173,7 +174,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws SpawnException {
+    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, value, outputType, Optional.ofNullable(opts));
         return res.map(outputType::cast);
 
@@ -187,7 +188,7 @@ public final class ActorRef {
      * @param action name of the action to be called.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action) throws SpawnException {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action) throws ActorInvocationException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActor(action, Empty.getDefaultInstance(), null, Optional.of(opts));
     }
@@ -313,7 +314,7 @@ public final class ActorRef {
                         this.getActorName(), status.getMessage());
                 throw new ActorInvocationException(msg);
             case ACTOR_NOT_FOUND:
-                throw new ActorInvocationException("Actor not found.");
+                throw new ActorNotFoundException("Actor not found.");
             case OK:
                 if (resp.hasValue() && Objects.nonNull(outputType)) {
                     try {

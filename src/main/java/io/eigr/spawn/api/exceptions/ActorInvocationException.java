@@ -1,6 +1,6 @@
 package io.eigr.spawn.api.exceptions;
 
-public final class ActorInvocationException extends SpawnException {
+public class ActorInvocationException extends SpawnException {
 
     public ActorInvocationException() {
         super();
