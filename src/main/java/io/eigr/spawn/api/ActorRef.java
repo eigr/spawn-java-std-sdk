@@ -9,7 +9,6 @@ import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
-import io.eigr.spawn.api.exceptions.ActorNotFoundException;
 import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
 
