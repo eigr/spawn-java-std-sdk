@@ -7,7 +7,8 @@ import com.google.protobuf.Empty;
 import com.google.protobuf.GeneratedMessageV3;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
-import io.eigr.spawn.api.exceptions.ActorInvokeException;
+import io.eigr.spawn.api.exceptions.ActorCreationException;
+import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
 import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
@@ -50,7 +51,7 @@ public final class ActorRef {
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, String system, String name) throws SpawnException {
+    protected static ActorRef of(SpawnClient client, String system, String name) throws ActorCreationException {
         ActorOuterClass.ActorId actorId = buildActorId(system, name);
         ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
@@ -73,7 +74,7 @@ public final class ActorRef {
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, String system, String name, String parent) throws SpawnException {
+    protected static ActorRef of(SpawnClient client, String system, String name, String parent) throws ActorCreationException {
         ActorOuterClass.ActorId actorId = buildActorId(system, name, parent);
         ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
@@ -102,7 +103,7 @@ public final class ActorRef {
                 .build();
     }
 
-    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws SpawnException {
+    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws ActorCreationException {
         Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
                 .addActors(actorId)
                 .build();
@@ -311,15 +312,15 @@ public final class ActorRef {
             case UNRECOGNIZED:
                 String msg = String.format("Error when trying to invoke Actor %s. Details: %s",
                         this.getActorName(), status.getMessage());
-                throw new ActorInvokeException(msg);
+                throw new ActorInvocationException(msg);
             case ACTOR_NOT_FOUND:
-                throw new ActorNotFoundException();
+                throw new ActorNotFoundException("Actor not found.");
             case OK:
                 if (resp.hasValue() && Objects.nonNull(outputType)) {
                     try {
                         return Optional.of(resp.getValue().unpack(outputType));
                     } catch (Exception e) {
-                        throw new SpawnException(e);
+                        throw new ActorInvocationException("Error handling response.", e);
                     }
                 }
                 return Optional.empty();

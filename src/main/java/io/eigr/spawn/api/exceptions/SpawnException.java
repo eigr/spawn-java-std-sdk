@@ -5,9 +5,9 @@ package io.eigr.spawn.api.exceptions;
  *
  * @author Paulo H3nrique Alves
  */
-public class SpawnException extends RuntimeException {
+public class SpawnException extends Exception  {
 
-    public SpawnException() {
+    protected SpawnException() {
         super();
     }
 
