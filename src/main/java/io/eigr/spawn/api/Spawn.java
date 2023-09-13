@@ -105,7 +105,7 @@ public final class Spawn {
      * </p>
      * @since 0.0.1
      */
-    public void start() throws Exception {
+    public void start() throws SpawnException {
         startServer();
         registerActorSystem();
     }
