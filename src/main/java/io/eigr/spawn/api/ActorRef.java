@@ -30,7 +30,7 @@ public final class ActorRef {
     }
 
     /**
-     * <p>This method is responsible for creating instances of the ActorRef class
+     * <p>This method is responsible for creating instances of the ActorRef class when Actor is a UnNamed actor.
      * </p>
      *
      * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
@@ -39,44 +39,13 @@ public final class ActorRef {
      * @since 0.0.1
      */
     protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity) throws ActorCreationException {
-        ActorOuterClass.ActorId actorId;
-
-        if (identity.isParent()) {
-            actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
-
-            spawnActor(actorId, client);
-        } else {
-            actorId = buildActorId(identity.getSystem(), identity.getName());
-        }
-
-        ActorRef ref = cache.getIfPresent(actorId);
-        if (Objects.nonNull(ref)) {
-            return ref;
-        }
-
-        ref = new ActorRef(actorId, client);
-        cache.put(actorId, ref);
-        return ref;
-    }
-
-    /**
-     * <p>This method is responsible for creating instances of the ActorRef class when Actor is a UnNamed actor.
-     * </p>
-     *
-     * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
-     * @param identity ActorIdentity name of the actor that this ActorRef instance should represent
-     * @param dispatchParent call proxy to spawn proxy or not
-     * @return the ActorRef instance
-     * @since 0.0.1
-     */
-    protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity, boolean dispatchParent) throws ActorCreationException {
         ActorOuterClass.ActorId actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
         ActorRef ref = cache.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
             return ref;
         }
 
-        if (dispatchParent) {
+        if (identity.hasLookup()) {
             spawnActor(actorId, client);
         }
 

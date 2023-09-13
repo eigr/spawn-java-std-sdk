@@ -24,26 +24,16 @@ public final class OkHttpSpawnClient implements SpawnClient {
     private final int proxyPort;
     private final OkHttpClient client;
 
-    private final OkHttpClient spawnClient;
-
     public OkHttpSpawnClient(String system, String proxyHost, int proxyPort) {
         this.system = system;
         this.proxyHost = proxyHost;
         this.proxyPort = proxyPort;
         this.client = new OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .callTimeout(200, TimeUnit.SECONDS)
-                .retryOnConnectionFailure(true)
-                .connectionPool(new ConnectionPool(256, 100, TimeUnit.SECONDS))
-                .build();
-
-        this.spawnClient = new OkHttpClient.Builder()
                 .connectTimeout(120, TimeUnit.SECONDS)
                 .readTimeout(120, TimeUnit.SECONDS)
                 .writeTimeout(120, TimeUnit.SECONDS)
                 .callTimeout(400, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
                 .connectionPool(new ConnectionPool(256, 100, TimeUnit.SECONDS))
                 .build();
     }
@@ -73,7 +63,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
                 .url(makeSpawnURLFrom(registration.getActors(0).getSystem()))
                 .post(body).build();
 
-        Call call = spawnClient.newCall(request);
+        Call call = client.newCall(request);
         try (Response response = call.execute()) {
             assert response.body() != null;
             return io.eigr.functions.protocol.Protocol.SpawnResponse.parseFrom(

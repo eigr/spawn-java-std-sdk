@@ -93,7 +93,6 @@ public final class Spawn {
      *
      * @param identity the name of the actor that this ActorRef instance should represent
      * @return the ActorRef instance
-     * @throws {@link io.eigr.spawn.api.exceptions.ActorCreationException}
      * @since 0.0.1
      */
     public ActorRef createActorRef(ActorIdentity identity) throws ActorCreationException {
@@ -123,7 +122,14 @@ public final class Spawn {
 
         return identities.stream().map(identity -> {
             try {
-                return identity.isParent() ? ActorRef.of(this.client, this.actorIdCache, identity, false) : ActorRef.of(this.client, this.actorIdCache, identity);
+                if (identity.isParent()) {
+                    return ActorRef.of(
+                            this.client,
+                            this.actorIdCache,
+                            ActorIdentity.of(identity.getSystem(), identity.getName(), identity.getParent(), false));
+                }
+
+                return ActorRef.of(this.client, this.actorIdCache, identity);
             } catch (ActorCreationException e) {
                 throw new SpawnFailureException(e);
             }
