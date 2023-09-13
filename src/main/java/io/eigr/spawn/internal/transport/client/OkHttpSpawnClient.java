@@ -29,10 +29,10 @@ public final class OkHttpSpawnClient implements SpawnClient {
         this.proxyHost = proxyHost;
         this.proxyPort = proxyPort;
         this.client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .callTimeout(100, TimeUnit.SECONDS)
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .callTimeout(200, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
                 .connectionPool(new ConnectionPool(256, 100, TimeUnit.SECONDS))
                 .build();
