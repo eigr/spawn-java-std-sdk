@@ -40,10 +40,10 @@ public final class OkHttpSpawnClient implements SpawnClient {
                 .build();
 
         this.spawnClient = new OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .callTimeout(200, TimeUnit.SECONDS)
+                .connectTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .callTimeout(400, TimeUnit.SECONDS)
                 .connectionPool(new ConnectionPool(256, 100, TimeUnit.SECONDS))
                 .build();
     }
