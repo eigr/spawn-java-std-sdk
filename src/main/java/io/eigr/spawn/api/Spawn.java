@@ -149,7 +149,7 @@ public final class Spawn {
             httpServer.start();
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("Stopping Spawn HTTP Server with termination grace period {} ...", this.terminationGracePeriodSeconds);
+                log.info("Stopping Spawn HTTP Server with termination grace period {}s ...", this.terminationGracePeriodSeconds);
                 httpServer.stop(this.terminationGracePeriodSeconds);
             }));
         } catch (IOException ex) {
