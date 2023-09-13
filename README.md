@@ -20,7 +20,7 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
     - [Async](#async)
     - [Timeouts](#timeouts)
 5. [Deploy](#deploy)
-    - [Defining an ActorSystem](#defining-an-actorsytem)
+    - [Defining an ActorSystem](#defining-an-actorsystem)
     - [Defining an ActorHost](#defining-an-actorhost)
     - [Activators](#activators)
 6. [Actor Model](#actor-model)
@@ -851,10 +851,11 @@ import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.Spawn.SpawnSystem;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.TransportOpts;
+import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.java.demo.domain.Domain;
 
 public class App {
-   public static void main(String[] args) throws Exception {
+   public static void main(String[] args) throws SpawnException {
       Spawn spawnSystem = new SpawnSystem()
               .create("spawn-system")
               .withActor(Joe.class)
@@ -874,8 +875,8 @@ public class App {
               .setLanguage("erlang")
               .build();
      
-      Optional<Object> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
-      Domain.Reply reply = maybeResponse.get();
+      joeActor.invoke("setLanguage", msg, Domain.Reply.class)
+              .ifPresent(response ->  log.info("Response is: {}", response));
    }
 }
 ```
