@@ -1,7 +1,6 @@
 package io.eigr.spawn.api;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
 import com.google.protobuf.GeneratedMessageV3;
@@ -10,14 +9,9 @@ import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
-import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * ActorRef is responsible for representing an instance of an Actor
@@ -25,12 +19,6 @@ import java.util.Optional;
  * @author Adriano Santos
  */
 public final class ActorRef {
-    private static final int CACHE_MAXIMUM_SIZE = 1_000;
-    private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
-    private static final Cache<ActorOuterClass.ActorId, ActorRef> ACTOR_REF_CACHE = Caffeine.newBuilder()
-            .maximumSize(CACHE_MAXIMUM_SIZE)
-            .expireAfterWrite(Duration.ofSeconds(CACHE_EXPIRE_AFTER_WRITE_SECONDS))
-            .build();
 
     private final ActorOuterClass.ActorId actorId;
 
@@ -46,20 +34,28 @@ public final class ActorRef {
      * </p>
      *
      * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
-     * @param system ActorSystem name of the actor that this ActorRef instance should represent
-     * @param name   the name of the actor that this ActorRef instance should represent
+     * @param identity ActorIdentity name of the actor that this ActorRef instance should represent
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, String system, String name) throws ActorCreationException {
-        ActorOuterClass.ActorId actorId = buildActorId(system, name);
-        ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
+    protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity) throws ActorCreationException {
+        ActorOuterClass.ActorId actorId;
+
+        if (identity.isParent()) {
+            actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
+
+            spawnActor(actorId, client);
+        } else {
+            actorId = buildActorId(identity.getSystem(), identity.getName());
+        }
+
+        ActorRef ref = cache.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
             return ref;
         }
 
         ref = new ActorRef(actorId, client);
-        ACTOR_REF_CACHE.put(actorId, ref);
+        cache.put(actorId, ref);
         return ref;
     }
 
@@ -68,26 +64,28 @@ public final class ActorRef {
      * </p>
      *
      * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
-     * @param system ActorSystem name of the actor that this ActorRef instance should represent
-     * @param name   the name of the actor that this ActorRef instance should represent
-     * @param parent the name of the unnamed parent actor
+     * @param identity ActorIdentity name of the actor that this ActorRef instance should represent
+     * @param dispatchParent call proxy to spawn proxy or not
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, String system, String name, String parent) throws ActorCreationException {
-        ActorOuterClass.ActorId actorId = buildActorId(system, name, parent);
-        ActorRef ref = ACTOR_REF_CACHE.getIfPresent(actorId);
+    protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity, boolean dispatchParent) throws ActorCreationException {
+        ActorOuterClass.ActorId actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
+        ActorRef ref = cache.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
             return ref;
         }
 
-        spawnActor(actorId, client);
+        if (dispatchParent) {
+            spawnActor(actorId, client);
+        }
+
         ref = new ActorRef(actorId, client);
-        ACTOR_REF_CACHE.put(actorId, ref);
+        cache.put(actorId, ref);
         return ref;
     }
 
-    private static ActorOuterClass.ActorId buildActorId(String system, String name) {
+    protected static ActorOuterClass.ActorId buildActorId(String system, String name) {
         ActorOuterClass.ActorId.Builder actorIdBuilder = ActorOuterClass.ActorId.newBuilder()
                 .setSystem(system)
                 .setName(name);
@@ -95,7 +93,7 @@ public final class ActorRef {
         return actorIdBuilder.build();
     }
 
-    private static ActorOuterClass.ActorId buildActorId(String system, String name, String parent) {
+    protected static ActorOuterClass.ActorId buildActorId(String system, String name, String parent) {
         return ActorOuterClass.ActorId.newBuilder()
                 .setSystem(system)
                 .setName(name)
@@ -103,9 +101,16 @@ public final class ActorRef {
                 .build();
     }
 
-    private static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws ActorCreationException {
+    protected static void spawnActor(ActorOuterClass.ActorId actorId, SpawnClient client) throws ActorCreationException {
         Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
                 .addActors(actorId)
+                .build();
+        client.spawn(req);
+    }
+
+    protected static void spawnAllActors(List<ActorOuterClass.ActorId> actorIds, SpawnClient client) throws ActorCreationException {
+        Protocol.SpawnRequest req = Protocol.SpawnRequest.newBuilder()
+                .addAllActors(actorIds)
                 .build();
         client.spawn(req);
     }

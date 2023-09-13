@@ -1,6 +1,7 @@
 package io.eigr.spawn;
 
 import io.eigr.functions.protocol.Protocol;
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.TransportOpts;
@@ -33,9 +34,9 @@ public class WorkflowTest {
                 )
                 .build();
 
-        joeActorRef = spawnSystem.createActorRef("spawn-system", "joe");
+        joeActorRef = spawnSystem.createActorRef(
+                ActorIdentity.of("spawn-system", "joe"));
     }
-
 
     @Test
     public void testBroadcastBuilder() {

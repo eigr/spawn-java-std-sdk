@@ -1,5 +1,7 @@
 package io.eigr.spawn.api;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.sun.net.httpserver.HttpServer;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
@@ -13,6 +15,7 @@ import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorRegistrationException;
 import io.eigr.spawn.api.exceptions.SpawnException;
+import io.eigr.spawn.api.exceptions.SpawnFailureException;
 import io.eigr.spawn.internal.Entity;
 import io.eigr.spawn.internal.transport.client.OkHttpSpawnClient;
 import io.eigr.spawn.internal.transport.client.SpawnClient;
@@ -22,10 +25,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Spawn SDK Entrypoint
@@ -33,7 +38,10 @@ import java.util.stream.Collectors;
 public final class Spawn {
     private static final Logger log = LoggerFactory.getLogger(Spawn.class);
     private static final String HTTP_ACTORS_ACTIONS_URI = "/api/v1/actors/actions";
+    private static final int CACHE_MAXIMUM_SIZE = 1_000;
+    private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
 
+    private final Cache<ActorOuterClass.ActorId, ActorRef> actorIdCache;
     private final SpawnClient client;
 
     private final int port;
@@ -43,6 +51,7 @@ public final class Spawn {
     private final List<Entity> entities;
     private String host;
     private Executor executor;
+    private int terminationGracePeriodSeconds;
 
     private Spawn(SpawnSystem builder) {
         this.system = builder.system;
@@ -51,7 +60,9 @@ public final class Spawn {
         this.host = builder.transportOpts.getHost();
         this.proxyHost = builder.transportOpts.getProxyHost();
         this.proxyPort = builder.transportOpts.getProxyPort();
+        this.actorIdCache = builder.actorIdCache;
         this.client = builder.client;
+        this.terminationGracePeriodSeconds = builder.terminationGracePeriodSeconds;
         this.executor = builder.transportOpts.getExecutor();
     }
 
@@ -71,38 +82,52 @@ public final class Spawn {
         return system;
     }
 
-    /**
-     * <p>This method is responsible for creating instances of the ActorRef class.
-     * See more about ActorRef in {@link io.eigr.spawn.api.InvocationOpts} class
-     * </p>
-     * @param system ActorSystem name of the actor that this ActorRef instance should represent
-     * @param name the name of the actor that this ActorRef instance should represent
-     * @return the ActorRef instance
-     * @throws {@link io.eigr.spawn.api.exceptions.ActorCreationException}
-     * @since 0.0.1
-     */
-    public ActorRef createActorRef(String system, String name) throws ActorCreationException {
-        return ActorRef.of(this.client, system, name);
+    public int getTerminationGracePeriodSeconds() {
+        return terminationGracePeriodSeconds;
     }
 
     /**
      * <p>This method is responsible for creating instances of the ActorRef class when Actor is a UnNamed actor.
      * See more about ActorRef in {@link io.eigr.spawn.api.InvocationOpts} class
      * </p>
-     * @param system ActorSystem name of the actor that this ActorRef instance should represent
-     * @param name the name of the actor that this ActorRef instance should represent
-     * @param parent the name of the unnamed parent actor
+     *
+     * @param identity the name of the actor that this ActorRef instance should represent
      * @return the ActorRef instance
      * @throws {@link io.eigr.spawn.api.exceptions.ActorCreationException}
      * @since 0.0.1
      */
-    public ActorRef createActorRef(String system, String name, String parent) throws ActorCreationException {
-        return ActorRef.of(this.client, system, name, parent);
+    public ActorRef createActorRef(ActorIdentity identity) throws ActorCreationException {
+        return ActorRef.of(this.client, this.actorIdCache, identity);
+    }
+
+    public Stream<ActorRef> createMultiActorRefs(List<ActorIdentity> identities) throws ActorCreationException {
+        List<ActorOuterClass.ActorId> ids = identities.stream().map(identity -> {
+            if (identity.isParent()) {
+                return ActorRef.buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
+            }
+
+            return ActorRef.buildActorId(identity.getSystem(), identity.getName());
+        }).collect(Collectors.toList());
+
+        ActorRef.spawnAllActors(ids, this.client);
+
+        return identities.stream().map(identity -> {
+            try {
+                if (identity.isParent()) {
+                    return ActorRef.of(this.client, this.actorIdCache, identity, false);
+                }
+
+                return ActorRef.of(this.client, this.actorIdCache, identity);
+            } catch (ActorCreationException e) {
+                throw new SpawnFailureException(e);
+            }
+        });
     }
 
     /**
      * <p>This method Starts communication with the Spawn proxy.
      * </p>
+     *
      * @since 0.0.1
      */
     public void start() throws SpawnException {
@@ -112,11 +137,17 @@ public final class Spawn {
 
     private void startServer() throws SpawnException {
         try {
-            HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 0);
+            final HttpServer httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 0);
             httpServer.createContext(HTTP_ACTORS_ACTIONS_URI, new ActorServiceHandler(this, this.entities));
             httpServer.setExecutor(this.executor);
             httpServer.start();
-        }catch (IOException ex) {
+
+            Runtime.getRuntime()
+                    .addShutdownHook(new Thread(() -> {
+                        log.info("Stopping Spawn HTTP Server with termination grace period %s ...", this.terminationGracePeriodSeconds);
+                        httpServer.stop(this.terminationGracePeriodSeconds);
+                    }));
+        } catch (IOException ex) {
             throw new SpawnException(ex);
         }
     }
@@ -251,16 +282,20 @@ public final class Spawn {
     }
 
     public static final class SpawnSystem {
-
         private final List<Entity> entities = new ArrayList<>();
+
+        private Cache<ActorOuterClass.ActorId, ActorRef> actorIdCache;
         private SpawnClient client;
         private String system = "spawn-system";
+
+        private int terminationGracePeriodSeconds = 30;
 
         private TransportOpts transportOpts = TransportOpts.builder().build();
 
         /**
          * <p>Builder method that establishes the ActorSystem to which the application will be part.
          * </p>
+         *
          * @param system ActorSystem name of the actor that this ActorRef instance should represent
          * @return the SpawnSystem instance
          * @since 0.0.1
@@ -274,6 +309,7 @@ public final class Spawn {
          * <p>Builder method that establishes the ActorSystem to which the application will be part.
          * The name of the ActorSystem will be captured at runtime via an environment variable called PROXY_ACTOR_SYSTEM_NAME
          * </p>
+         *
          * @return the SpawnSystem instance
          * @since 0.0.1
          */
@@ -287,6 +323,7 @@ public final class Spawn {
         /**
          * <p>Constructor method that adds a new Actor to the Spawn proxy.
          * </p>
+         *
          * @param actorKlass the actor definition class
          * @return the SpawnSystem instance
          * @since 0.0.1
@@ -303,9 +340,10 @@ public final class Spawn {
          * <p>Constructor method that adds a new Actor to the Spawn proxy.
          * Allows options to be passed to the class constructor. The constructor must consist of only one argument
          * </p>
+         *
          * @param actorKlass the actor definition class
-         * @param arg the object that will be passed as an argument to the constructor via the lambda fabric
-         * @param factory a lambda that constructs the instance of the Actor object
+         * @param arg        the object that will be passed as an argument to the constructor via the lambda fabric
+         * @param factory    a lambda that constructs the instance of the Actor object
          * @return the SpawnSystem instance
          * @since 0.0.1
          */
@@ -314,6 +352,11 @@ public final class Spawn {
             if (maybeEntity.isPresent()) {
                 this.entities.add(maybeEntity.get());
             }
+            return this;
+        }
+
+        public SpawnSystem withTerminationGracePeriodSeconds(int seconds) {
+            this.terminationGracePeriodSeconds = seconds;
             return this;
         }
 
@@ -329,6 +372,11 @@ public final class Spawn {
         }
 
         public Spawn build() {
+            this.actorIdCache = Caffeine.newBuilder()
+                    .maximumSize(CACHE_MAXIMUM_SIZE)
+                    .expireAfterWrite(Duration.ofSeconds(CACHE_EXPIRE_AFTER_WRITE_SECONDS))
+                    .build();
+
             this.client = new OkHttpSpawnClient(
                     this.system,
                     this.transportOpts.getProxyHost(),

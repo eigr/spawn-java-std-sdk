@@ -1,5 +1,6 @@
 package io.eigr.spawn;
 
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.TransportOpts;
@@ -37,7 +38,9 @@ public class SpawnTest {
 
     @Test
     public void testApp() throws ActorCreationException, ActorInvocationException {
-        ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "test_joe");
+        ActorRef joeActor = spawnSystem.createActorRef(
+                ActorIdentity.of("spawn-system", "test_joe"));
+
         assertNotNull(joeActor);
 
         Actor.Request msg = Actor.Request.newBuilder()

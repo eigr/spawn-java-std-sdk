@@ -93,7 +93,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v0.7.1</version>
+   <version>v0.8.0</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -127,7 +127,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.7.1</version>
+         <version>v0.8.0</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -635,6 +635,7 @@ See an example:
 ```Java
 package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
@@ -649,7 +650,7 @@ public class SideEffectActorExample {
    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
       // Create a ActorReference to send side effect message
       ActorRef sideEffectReceiverActor = ctx.getSpawnSystem()
-              .createActorRef("spawn-system", "mike", "abs_actor");
+              .createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
 
       return Value.at()
               .response(Domain.Reply.newBuilder()
@@ -683,6 +684,7 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
@@ -702,7 +704,7 @@ public class ForwardExample {
          log.info("State is present and value is {}", ctx.getState().get());
       }
       ActorRef forwardedActor = ctx.getSpawnSystem()
-              .createActorRef("spawn-system", "mike", "abs_actor");
+              .createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
 
       return Value.at()
               .flow(Forward.to(forwardedActor, "setLanguage"))
@@ -725,6 +727,7 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
@@ -737,7 +740,7 @@ public class PipeActorExample {
    @Action
    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
       ActorRef pipeReceiverActor = ctx.getSpawnSystem()
-              .createActorRef("spawn-system", "joe");
+              .createActorRef(ActorIdentity.of("spawn-system", "joe"));
 
       return Value.at()
               .response(Domain.Reply.newBuilder()
@@ -832,7 +835,7 @@ In the sections below we will give some examples of how to invoke different type
 To invoke an actor named like the one we defined in section [Getting Started](#getting-started) we could do as follows:
 
 ```Java
-ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "joe"));
         
 Domain.Request msg = Domain.Request.newBuilder()
        .setLanguage("erlang")
@@ -849,6 +852,7 @@ package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.Spawn.SpawnSystem;
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.api.exceptions.SpawnException;
@@ -869,7 +873,7 @@ public class App {
 
       spawnSystem.start();
 
-      ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+      ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "joe"));
 
       Domain.Request msg = Domain.Request.newBuilder()
               .setLanguage("erlang")
@@ -916,7 +920,7 @@ public class AbstractActor {
 So you could define and call this actor at runtime like this:
 
 ```Java
-ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
+ActorRef mike = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
         
 Domain.Request msg = Domain.Request.newBuilder()
        .setLanguage("erlang")
@@ -929,7 +933,7 @@ Domain.Reply reply = maybeResponse.get();
 The important part of the code above is the following snippet:
 
 ```Java
-ActorRef mike = spawnSystem.createActorRef("spawn-system", "mike", "abs_actor");
+ActorRef mike = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
 ```
 
 These tells Spawn that this actor will actually be named at runtime. The name parameter with value "mike" 
@@ -956,6 +960,7 @@ It is possible to change the request waiting timeout using the invocation option
 ```Java
 package io.eigr.spawn.java.demo;
 
+import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.InvocationOpts;
 import io.eigr.spawn.api.Spawn;
@@ -973,7 +978,7 @@ public class App {
 
       spawnSystem.start();
 
-      ActorRef joeActor = spawnSystem.createActorRef("spawn-system", "joe");
+      ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "joe"));
 
       Domain.Request msg = Domain.Request.newBuilder()
               .setLanguage("erlang")

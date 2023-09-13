@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 
 public final class ActorContext<S extends Object> {
-
     private Spawn spawn;
 
     private Optional<S> state;
