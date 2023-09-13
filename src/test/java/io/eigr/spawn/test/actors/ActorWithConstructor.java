@@ -1,13 +1,19 @@
 package io.eigr.spawn.test.actors;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.java.test.domain.Actor;
 
-@StatefulNamedActor(name = "test_joe", stateType = Actor.State.class, channel = "test.channel")
-public final class JoeActor {
+@StatefulNamedActor(name = "test_actor_constructor", stateType = Actor.State.class)
+public final class ActorWithConstructor {
+    private final String defaultMessage;
+
+    public ActorWithConstructor(String defaultMessage) {
+        this.defaultMessage = defaultMessage;
+    }
+
     @Action(inputType = Actor.Request.class)
     public Value setLanguage(Actor.Request msg, ActorContext<Actor.State> context) {
         if (context.getState().isPresent()) {
@@ -15,7 +21,7 @@ public final class JoeActor {
 
         return Value.at()
                 .response(Actor.Reply.newBuilder()
-                        .setResponse("Hello From Java")
+                        .setResponse(defaultMessage)
                         .build())
                 .state(updateState("java"))
                 .reply();

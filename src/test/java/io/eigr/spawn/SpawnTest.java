@@ -7,6 +7,7 @@ import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.java.test.domain.Actor;
+import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,7 @@ public class SpawnTest {
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system")
                 .withActor(JoeActor.class)
+                .withActor(ActorWithConstructor.class, "Hello with Constructor", arg -> new ActorWithConstructor((String) arg))
                 .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)
