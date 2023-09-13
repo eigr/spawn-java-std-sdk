@@ -100,6 +100,16 @@ public final class Spawn {
         return ActorRef.of(this.client, this.actorIdCache, identity);
     }
 
+    /**
+     * <p>This method is responsible for creating instances of the ActorRef in batch.
+     * See more about ActorRef in {@link io.eigr.spawn.api.InvocationOpts} class
+     * </p>
+     *
+     * @param identities the name of the actor that this ActorRef instance should represent
+     * @return stream of the ActorRef instances
+     * @throws {@link io.eigr.spawn.api.exceptions.ActorCreationException}
+     * @since 0.8.0
+     */
     public Stream<ActorRef> createMultiActorRefs(List<ActorIdentity> identities) throws ActorCreationException {
         List<ActorOuterClass.ActorId> ids = identities.stream().map(identity -> {
             if (identity.isParent()) {
