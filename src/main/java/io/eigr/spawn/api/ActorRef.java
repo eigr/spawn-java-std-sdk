@@ -30,16 +30,26 @@ public final class ActorRef {
     }
 
     /**
-     * <p>This method is responsible for creating instances of the ActorRef class when Actor is a UnNamed actor.
+     * <p>This method is responsible for creating instances of the ActorRef class
      * </p>
      *
      * @param client is the client part of the Spawn protocol and is responsible for communicating with the Proxy.
+     * @param cache is actor ids cache
      * @param identity ActorIdentity name of the actor that this ActorRef instance should represent
      * @return the ActorRef instance
      * @since 0.0.1
      */
     protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity) throws ActorCreationException {
-        ActorOuterClass.ActorId actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
+        ActorOuterClass.ActorId actorId;
+
+        if (identity.isParent()) {
+            actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
+
+            spawnActor(actorId, client);
+        } else {
+            actorId = buildActorId(identity.getSystem(), identity.getName());
+        }
+
         ActorRef ref = cache.getIfPresent(actorId);
         if (Objects.nonNull(ref)) {
             return ref;
