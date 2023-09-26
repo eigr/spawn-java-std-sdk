@@ -16,7 +16,4 @@ public @interface StatelessNamedActor {
 
     String channel() default "";
 
-    int minPoolSize() default 1;
-
-    int maxPoolSize() default 0;
 }

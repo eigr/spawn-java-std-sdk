@@ -248,8 +248,6 @@ public final class Entity {
         final long snapshotTimeout = actor.snapshotTimeout();
         final boolean isStateful = true;
         final Class stateType = actor.stateType();
-        final int minPoolSize = actor.minPoolSize();
-        final int maxPoolSize = actor.maxPoolSize();
         final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
@@ -266,8 +264,8 @@ public final class Entity {
                 snapshotTimeout,
                 actions,
                 timerActions,
-                minPoolSize,
-                maxPoolSize,
+                0,
+                0,
                 channel,
                 Optional.ofNullable(arg),
                 Optional.ofNullable(factory));
@@ -291,8 +289,6 @@ public final class Entity {
         final long snapshotTimeout = actor.snapshotTimeout();
         final boolean isStateful = true;
         final Class stateType = actor.stateType();
-        final int minPoolSize = actor.minPoolSize();
-        final int maxPoolSize = actor.maxPoolSize();
         final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
@@ -309,8 +305,8 @@ public final class Entity {
                 snapshotTimeout,
                 actions,
                 timerActions,
-                minPoolSize,
-                maxPoolSize,
+                0,
+                0,
                 channel,
                 Optional.ofNullable(arg),
                 Optional.ofNullable(factory));
@@ -376,8 +372,6 @@ public final class Entity {
         final ActorKind kind = ActorKind.NAMED;
         final long deactivateTimeout = actor.deactivatedTimeout();
         final boolean isStateful = false;
-        final int minPoolSize = actor.minPoolSize();
-        final int maxPoolSize = actor.maxPoolSize();
         final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
@@ -394,8 +388,8 @@ public final class Entity {
                 0,
                 actions,
                 timerActions,
-                minPoolSize,
-                maxPoolSize,
+                0,
+                0,
                 channel,
                 Optional.ofNullable(arg),
                 Optional.ofNullable(factory));
@@ -417,8 +411,6 @@ public final class Entity {
         final ActorKind kind = ActorKind.UNNAMED;
         final long deactivateTimeout = actor.deactivatedTimeout();
         final boolean isStateful = false;
-        final int minPoolSize = actor.minPoolSize();
-        final int maxPoolSize = actor.maxPoolSize();
         final String channel = actor.channel();
 
         final Map<String, Entity.EntityMethod> actions = buildActions(entity, Action.class);
@@ -435,8 +427,8 @@ public final class Entity {
                 0,
                 actions,
                 timerActions,
-                minPoolSize,
-                maxPoolSize,
+                0,
+                0,
                 channel,
                 Optional.ofNullable(arg),
                 Optional.ofNullable(factory));

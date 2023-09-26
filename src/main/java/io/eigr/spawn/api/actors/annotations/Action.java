@@ -31,5 +31,5 @@ public @interface Action {
 
     Class<?> outputType() default Default.class;
 
-    public class Default {}
+    class Default {}
 }

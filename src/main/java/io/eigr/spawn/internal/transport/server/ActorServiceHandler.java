@@ -158,7 +158,7 @@ public final class ActorServiceHandler implements HttpHandler {
                     actorContext = new ActorContext(this.spawn);
                 }
 
-                if (inputType.isAssignableFrom(ActorContext.class)) {
+                if (inputType.isAssignableFrom(ActorContext.class) && actorMethod.getParameterTypes().length == 1) {
                     return Optional.of((Value) actorMethod.invoke(actorRef, actorContext));
                 } else {
                     final Object unpack = value.unpack(inputType);
