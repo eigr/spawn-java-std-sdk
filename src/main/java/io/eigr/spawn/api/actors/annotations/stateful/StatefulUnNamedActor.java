@@ -21,8 +21,4 @@ public @interface StatefulUnNamedActor {
     long snapshotTimeout() default 50000;
 
     String channel() default "";
-
-    int minPoolSize() default 1;
-
-    int maxPoolSize() default 0;
 }

@@ -15,8 +15,4 @@ public @interface StatelessUnNamedActor {
     long deactivatedTimeout() default 10000;
 
     String channel() default "";
-
-    int minPoolSize() default 1;
-
-    int maxPoolSize() default 0;
 }
