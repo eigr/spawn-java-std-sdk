@@ -88,7 +88,7 @@ public final class Value {
         return type;
     }
 
-    public Value response(Object value) {
+    public <R extends GeneratedMessageV3> Value response(R value) {
         this.response = value;
         return this;
     }
