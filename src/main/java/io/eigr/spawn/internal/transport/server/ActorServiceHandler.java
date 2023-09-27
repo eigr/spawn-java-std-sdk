@@ -12,9 +12,6 @@ import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
-import io.eigr.spawn.api.actors.workflows.Broadcast;
-import io.eigr.spawn.api.actors.workflows.Forward;
-import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.internal.Entity;
@@ -210,29 +207,29 @@ public final class ActorServiceHandler implements HttpHandler {
         Protocol.Workflow.Builder workflowBuilder = Protocol.Workflow.newBuilder();
 
         if (valueResponse.getBroadcast().isPresent()) {
-            Protocol.Broadcast b = ((Broadcast) valueResponse.getBroadcast().get()).build();
+            Protocol.Broadcast b = valueResponse.getBroadcast().get().build();
             workflowBuilder.setBroadcast(b);
         }
 
         if (valueResponse.getForward().isPresent()) {
-            Protocol.Forward f = ((Forward) valueResponse.getForward().get()).build();
+            Protocol.Forward f = valueResponse.getForward().get().build();
             workflowBuilder.setForward(f);
         }
 
         if (valueResponse.getPipe().isPresent()) {
-            Protocol.Pipe p = ((Pipe) valueResponse.getPipe().get()).build();
+            Protocol.Pipe p = valueResponse.getPipe().get().build();
             workflowBuilder.setPipe(p);
         }
 
         if (valueResponse.getEffects().isPresent()) {
-            List<SideEffect> efs = ((List<SideEffect>) valueResponse.getEffects().get());
+            List<SideEffect<?>> efs = valueResponse.getEffects().get();
             workflowBuilder.addAllEffects(getProtocolEffects(efs));
         }
 
         return workflowBuilder.build();
     }
 
-    private List<Protocol.SideEffect> getProtocolEffects(List<SideEffect> effects) {
+    private List<Protocol.SideEffect> getProtocolEffects(List<SideEffect<?>> effects) {
         return effects.stream()
                 .map(SideEffect::build)
                 .collect(Collectors.toList());
