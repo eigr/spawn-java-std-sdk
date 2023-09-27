@@ -5,6 +5,7 @@ import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
+import io.eigr.spawn.api.exceptions.SpawnFailureException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,17 +106,23 @@ public final class Value {
     }
 
     public Value flow(Broadcast<?> broadcast) {
-        this.broadcast = Optional.of(broadcast);
+        this.broadcast = Optional.ofNullable(broadcast);
         return this;
     }
 
     public Value flow(Forward forward) {
+        if (this.pipe.isPresent()) {
+            throw new SpawnFailureException("You can only use Forward or Pipe. Never both together.");
+        }
         this.forward = Optional.ofNullable(forward);
         return this;
     }
 
     public Value flow(Pipe pipe) {
-        this.pipe = Optional.of(pipe);
+        if (this.forward.isPresent()) {
+            throw new IllegalArgumentException("You can only use Pipe or Forward. Never both together.");
+        }
+        this.pipe = Optional.ofNullable(pipe);
         return this;
     }
 
@@ -129,7 +136,7 @@ public final class Value {
             ef.add(effect);
         }
 
-        this.effects = Optional.of(ef);
+        this.effects = Optional.ofNullable(ef);
         return this;
     }
 
