@@ -11,18 +11,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessageV3> {
+public final class Value {
 
-    private S state;
-    private R response;
-
+    private Object state;
+    private Object response;
     private boolean checkpoint;
     private Optional<Broadcast<?>> broadcast;
     private Optional<Forward> forward;
     private Optional<Pipe> pipe;
-    private Optional<List<SideEffect>> effects;
-
-    private ResponseType type;
+    private Optional<List<SideEffect<?>>> effects;
+    private final ResponseType type;
 
     private Value() {
         this.state = null;
@@ -36,13 +34,13 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     }
 
     private Value(
-            R response,
-            S state,
+            Object response,
+            Object state,
             boolean checkpoint,
             Optional<Broadcast<?>> broadcast,
             Optional<Forward> forward,
             Optional<Pipe> pipe,
-            Optional<List<SideEffect>> effects,
+            Optional<List<SideEffect<?>>> effects,
             ResponseType type) {
         this.response = response;
         this.state = state;
@@ -54,16 +52,16 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         this.type = type;
     }
 
-    public static <S, V> Value at() {
+    public static Value at() {
         return new Value();
     }
 
-    public R getResponse() {
-        return response;
+    public <R extends GeneratedMessageV3> R getResponse() {
+        return (R) response;
     }
 
-    public S getState() {
-        return state;
+    public <S extends GeneratedMessageV3> S getState() {
+        return (S) state;
     }
 
     public boolean getCheckpoint() {
@@ -82,7 +80,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         return pipe;
     }
 
-    public Optional<List<SideEffect>> getEffects() {
+    public Optional<List<SideEffect<?>>> getEffects() {
         return effects;
     }
 
@@ -90,23 +88,23 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         return type;
     }
 
-    public Value response(R value) {
+    public <R extends GeneratedMessageV3> Value response(R value) {
         this.response = value;
         return this;
     }
 
-    public Value state(S state) {
+    public <S extends GeneratedMessageV3> Value state(S state) {
         this.state = state;
         return this;
     }
 
-    public Value state(S state, boolean checkpoint) {
+    public <S extends GeneratedMessageV3> Value state(S state, boolean checkpoint) {
         this.state = state;
         this.checkpoint = checkpoint;
         return this;
     }
 
-    public Value flow(Broadcast broadcast) {
+    public Value flow(Broadcast<?> broadcast) {
         this.broadcast = Optional.of(broadcast);
         return this;
     }
@@ -121,8 +119,8 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         return this;
     }
 
-    public Value flow(SideEffect effect) {
-        List<SideEffect> ef;
+    public Value flow(SideEffect<?> effect) {
+        List<SideEffect<?>> ef;
         if (this.effects.isPresent()) {
             ef = this.effects.get();
             ef.add(effect);
@@ -135,7 +133,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
         return this;
     }
 
-    public Value flow(List<SideEffect> effects) {
+    public Value flow(List<SideEffect<?>> effects) {
         this.effects = Optional.of(effects);
         return this;
     }
@@ -171,7 +169,7 @@ public final class Value<S extends GeneratedMessageV3, R extends GeneratedMessag
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Value<?, ?> value = (Value<?, ?>) o;
+        Value value = (Value) o;
         return Objects.equals(state, value.state) &&
                 Objects.equals(response, value.response) &&
                 Objects.equals(checkpoint, value.checkpoint) &&
