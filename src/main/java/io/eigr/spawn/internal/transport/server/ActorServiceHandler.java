@@ -206,25 +206,10 @@ public final class ActorServiceHandler implements HttpHandler {
     private Protocol.Workflow buildWorkflow(Value valueResponse) {
         Protocol.Workflow.Builder workflowBuilder = Protocol.Workflow.newBuilder();
 
-        if (valueResponse.getBroadcast().isPresent()) {
-            Protocol.Broadcast b = valueResponse.getBroadcast().get().build();
-            workflowBuilder.setBroadcast(b);
-        }
-
-        if (valueResponse.getForward().isPresent()) {
-            Protocol.Forward f = valueResponse.getForward().get().build();
-            workflowBuilder.setForward(f);
-        }
-
-        if (valueResponse.getPipe().isPresent()) {
-            Protocol.Pipe p = valueResponse.getPipe().get().build();
-            workflowBuilder.setPipe(p);
-        }
-
-        if (valueResponse.getEffects().isPresent()) {
-            List<SideEffect<?>> efs = valueResponse.getEffects().get();
-            workflowBuilder.addAllEffects(getProtocolEffects(efs));
-        }
+        valueResponse.getBroadcast().ifPresent(b -> workflowBuilder.setBroadcast(b.build()));
+        valueResponse.getForward().ifPresent(f -> workflowBuilder.setForward(f.build()));
+        valueResponse.getPipe().ifPresent(p -> workflowBuilder.setPipe(p.build()));
+        valueResponse.getEffects().ifPresent(e -> workflowBuilder.addAllEffects(getProtocolEffects(e)));
 
         return workflowBuilder.build();
     }
