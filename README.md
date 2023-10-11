@@ -619,6 +619,11 @@ Therefore, it will not build objects based on complex dependencies nor take care
 In other words, all instances added through the bind method of the SimpleDependencyInjector class will be singletons. 
 This mechanism works much more like a bucket of objects that will be forwarded via your actor's constructor.
 
+> **_NOTE:_** **Why not use the java cdi 2.0 spec?**
+Our goals are to keep the SDK for standalone Java applications very simple. We consider that implementing the entire specification would not be viable for us at the moment. It would be a lot of effort and energy expenditure that we consider spending on other parts of the ecosystem that we think will guarantee us more benefits.
+However, as an open source project we will be happy if anyone wants to contribute in this regard.
+
+
 ### Types of Actors
 
 First we need to understand how the various types of actors available in Spawn behave. Spawn defines the following types of Actors:
