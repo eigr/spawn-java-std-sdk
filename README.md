@@ -606,7 +606,7 @@ public class App {
 
       Spawn spawnSystem = new Spawn.SpawnSystem()
               .create("spawn-system")
-              .withActor(Joe.class, actorConstructorArgs, injector -> new Joe((DependencyInjector) injector))
+              .withActor(Joe.class, injector -> new Joe((DependencyInjector) injector))
               .build();
 
       spawnSystem.start();
