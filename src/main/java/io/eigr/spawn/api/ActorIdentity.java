@@ -58,7 +58,6 @@ public final class ActorIdentity {
     }
 
     public boolean isParent() {
-        System.out.println(String.format("Actor %s is parent? = %s", this.name, this.maybeParent.isPresent()));
         return this.maybeParent.isPresent();
     }
 

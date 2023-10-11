@@ -94,7 +94,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v1.0.0</version>
+   <version>v1.0.1</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -128,7 +128,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v1.0.0</version>
+         <version>v1.0.1</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -598,6 +598,10 @@ import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 public class App {
    public static void main(String[] args) {
       DependencyInjector injector = SimpleDependencyInjector.createInjector();
+      /* 
+      You can bind as many objects as you want. As long as they are of unique types.
+      If you try to add different instances of the same type you will receive an error.        
+      */ 
       injector.bind(MessageService.class, new MessageServiceImpl());
 
       Spawn spawnSystem = new Spawn.SpawnSystem()
