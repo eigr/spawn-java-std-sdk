@@ -562,7 +562,7 @@ public final class ActorWithDependencies {
 
     public ActorWithConstructor(DependencyInjector injector) {
        // Note how to use dependency injection here to get a concrete class of MessageService.
-        this.defaultMessage = injector.getInstance(MessageService.class);
+        this.messageService = injector.getInstance(MessageService.class);
     }
 
     @Action(inputType = Actor.Request.class)
