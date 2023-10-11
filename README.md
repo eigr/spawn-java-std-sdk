@@ -556,11 +556,11 @@ import io.eigr.spawn.api.extensions.DependencyInjector;
 import io.eigr.spawn.java.test.domain.Actor;
 
 @StatefulNamedActor(name = "test_actor_constructor", stateType = Actor.State.class)
-public final class ActorWithDependencies {
+public final class Joe {
 
     private final MessageService messageService;
 
-    public ActorWithConstructor(DependencyInjector injector) {
+    public Joe(DependencyInjector injector) {
        // Note how to use dependency injection here to get a concrete class of MessageService.
         this.messageService = injector.getInstance(MessageService.class);
     }
