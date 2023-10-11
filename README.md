@@ -6,6 +6,7 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
 1. [Overview](#overview)
 2. [Getting Started](#getting-started)
 3. [Advanced Use Cases](#advanced-use-cases)
+    - [Dependency Injection](#dependency-injection)
     - [Types of Actors](#types-of-actors)
     - [Stateless Actors](#stateless-actors)
     - [Considerations about Spawn actors](#considerations-about-spawn-actors)
@@ -14,16 +15,16 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
     - [Forward](#forward)
     - [Pipe](#pipe)
     - [State Management](#state-management)
-4. [Using Actors](#using-actors)
+5. [Using Actors](#using-actors)
     - [Call Named Actors](#call-named-actors)
     - [Call Unnamed Actors](#call-unnamed-actors)
     - [Async](#async)
     - [Timeouts](#timeouts)
-5. [Deploy](#deploy)
+6. [Deploy](#deploy)
     - [Defining an ActorSystem](#defining-an-actorsystem)
     - [Defining an ActorHost](#defining-an-actorhost)
     - [Activators](#activators)
-6. [Actor Model](#actor-model)
+7. [Actor Model](#actor-model)
     - [Virtual Actors](#virtual-actors)
 
 
@@ -93,7 +94,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v0.9.1</version>
+   <version>v1.0.0</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -127,7 +128,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v0.9.1</version>
+         <version>v1.0.0</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -517,6 +518,102 @@ And this is it to start! Now that you know the basics of local development, we c
 Spawn Actors abstract a huge amount of developer infrastructure and can be used for many types of jobs. 
 In the sections below we will demonstrate some features available in Spawn that contribute to the development of 
 complex applications in a simplified way.
+
+### Dependency Injection
+
+Sometimes we need to pass many arguments as dependencies to the Actor class.
+In this case, it is more convenient to use your own dependency injection mechanism.
+However, the Spawn SDK already comes with an auxiliary class to make this easier for the developer.
+Let's look at an example:
+
+1. First let's take a look at some example dependency classes:
+
+```java
+// We will have an interface that represents any type of service.
+public interface MessageService {
+   String getDefaultMessage();
+}
+
+// and concrete implementation here
+public class MessageServiceImpl implements MessageService {
+   @Override
+   public String getDefaultMessage() {
+      return "Hello Spawn in English";
+   }
+}
+```
+
+2. Second, let's define an actor so that it receives an instance of the DependencyInjector class through the class constructor:
+
+```java
+package io.eigr.spawn.test.actors;
+
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
+import io.eigr.spawn.api.extensions.DependencyInjector;
+import io.eigr.spawn.java.test.domain.Actor;
+
+@StatefulNamedActor(name = "test_actor_constructor", stateType = Actor.State.class)
+public final class ActorWithDependencies {
+
+    private final MessageService messageService;
+
+    public ActorWithConstructor(DependencyInjector injector) {
+       // Note how to use dependency injection here to get a concrete class of MessageService.
+        this.defaultMessage = injector.getInstance(MessageService.class);
+    }
+
+    @Action(inputType = Actor.Request.class)
+    public Value setLanguage(Actor.Request msg, ActorContext<Actor.State> context) {
+        if (context.getState().isPresent()) {
+        }
+
+        return Value.at()
+                .response(Actor.Reply.newBuilder()
+                        .setResponse(messageService.getDefaultMessage())
+                        .build())
+                .state(updateState("java"))
+                .reply();
+    }
+
+    private Actor.State updateState(String language) {
+        return Actor.State.newBuilder()
+                .addLanguages(language)
+                .build();
+    }
+}
+
+```
+
+3. Then you can pass your dependent classes this way to your Actor:
+```java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.extensions.DependencyInjector;
+import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
+
+public class App {
+   public static void main(String[] args) {
+      DependencyInjector injector = SimpleDependencyInjector.createInjector();
+      injector.bind(MessageService.class, new MessageServiceImpl());
+
+      Spawn spawnSystem = new Spawn.SpawnSystem()
+              .create("spawn-system")
+              .withActor(Joe.class, actorConstructorArgs, injector -> new Joe((DependencyInjector) injector))
+              .build();
+
+      spawnSystem.start();
+   }
+}
+```
+
+It is important to note that this helper mechanism does not currently implement any type of complex dependency graph. 
+Therefore, it will not build objects based on complex dependencies nor take care of the object lifecycle for you. 
+In other words, all instances added through the bind method of the SimpleDependencyInjector class will be singletons. 
+This mechanism works much more like a bucket of objects that will be forwarded via your actor's constructor.
 
 ### Types of Actors
 

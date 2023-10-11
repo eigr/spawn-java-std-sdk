@@ -4,14 +4,16 @@ import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
+import io.eigr.spawn.api.extensions.DependencyInjector;
 import io.eigr.spawn.java.test.domain.Actor;
 
 @StatefulNamedActor(name = "test_actor_constructor", stateType = Actor.State.class)
 public final class ActorWithConstructor {
+
     private final String defaultMessage;
 
-    public ActorWithConstructor(String defaultMessage) {
-        this.defaultMessage = defaultMessage;
+    public ActorWithConstructor(DependencyInjector injector) {
+        this.defaultMessage = injector.getInstance(String.class);
     }
 
     @Action(inputType = Actor.Request.class)

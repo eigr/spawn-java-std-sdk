@@ -14,6 +14,7 @@ import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
+import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 import io.eigr.spawn.internal.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

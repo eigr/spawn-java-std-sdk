@@ -1,14 +1,16 @@
 package io.eigr.spawn.api.actors;
 
 import io.eigr.spawn.api.Spawn;
+import io.eigr.spawn.api.extensions.DependencyInjector;
 
 import java.util.Optional;
 import java.util.StringJoiner;
 
 public final class ActorContext<S extends Object> {
     private Spawn spawn;
-
     private Optional<S> state;
+
+    private DependencyInjector injector;
 
     public ActorContext(Spawn spawn){
         this.spawn = spawn;
@@ -27,6 +29,7 @@ public final class ActorContext<S extends Object> {
     public Optional<S> getState()  {
         return state;
     }
+
 
     @Override
     public String toString() {

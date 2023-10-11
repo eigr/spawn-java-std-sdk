@@ -14,7 +14,7 @@ public final class ActorIdentity {
     private ActorIdentity(String system, String name, String parent, boolean lookup){
         this.system = system;
         this.name = name;
-        this.maybeParent = Optional.ofNullable(parent);
+        this.maybeParent = Optional.of(parent);
         this.lookup = lookup;
     }
 
@@ -26,7 +26,7 @@ public final class ActorIdentity {
     }
 
     public static ActorIdentity of(String system, String name) {
-        return new ActorIdentity(system, name, true);
+        return new ActorIdentity(system, name, false);
     }
 
     public static ActorIdentity of(String system, String name, String parent) {
@@ -58,6 +58,7 @@ public final class ActorIdentity {
     }
 
     public boolean isParent() {
+        System.out.println(String.format("Actor %s is parent? = %s", this.name, this.maybeParent.isPresent()));
         return this.maybeParent.isPresent();
     }
 

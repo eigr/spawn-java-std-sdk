@@ -43,10 +43,12 @@ public final class ActorRef {
         ActorOuterClass.ActorId actorId;
 
         if (identity.isParent()) {
+            System.out.println("Passou como parent");
             actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
 
             spawnActor(actorId, client);
         } else {
+            System.out.println("Passou como normal");
             actorId = buildActorId(identity.getSystem(), identity.getName());
         }
 
@@ -56,6 +58,7 @@ public final class ActorRef {
         }
 
         if (identity.hasLookup()) {
+            System.out.println("Faca lookup");
             spawnActor(actorId, client);
         }
 

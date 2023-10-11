@@ -6,6 +6,8 @@ import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
+import io.eigr.spawn.api.extensions.DependencyInjector;
+import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
@@ -23,10 +25,13 @@ public class SpawnTest {
 
     @Before
     public void before() throws Exception {
+        DependencyInjector injector = SimpleDependencyInjector.createInjector();
+        injector.bind(String.class, "Hello with Constructor");
+
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system")
                 .withActor(JoeActor.class)
-                .withActor(ActorWithConstructor.class, "Hello with Constructor", arg -> new ActorWithConstructor((String) arg))
+                .withActor(ActorWithConstructor.class, injector, arg -> new ActorWithConstructor((DependencyInjector) arg))
                 .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)
