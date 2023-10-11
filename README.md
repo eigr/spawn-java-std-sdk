@@ -567,9 +567,6 @@ public final class Joe {
 
     @Action(inputType = Actor.Request.class)
     public Value setLanguage(Actor.Request msg, ActorContext<Actor.State> context) {
-        if (context.getState().isPresent()) {
-        }
-
         return Value.at()
                 .response(Actor.Reply.newBuilder()
                         .setResponse(messageService.getDefaultMessage())
