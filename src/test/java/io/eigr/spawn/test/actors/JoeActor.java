@@ -4,6 +4,7 @@ import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.annotations.Action;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
+import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.java.test.domain.Actor;
 
 @StatefulNamedActor(name = "test_joe", stateType = Actor.State.class, channel = "test.channel")

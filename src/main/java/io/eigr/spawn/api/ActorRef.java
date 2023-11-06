@@ -324,6 +324,10 @@ public final class ActorRef {
 
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
+        if (Objects.nonNull(this.actorId.getParent()) && !this.actorId.getParent().isEmpty()) {
+            invocationRequestBuilder.setRegisterRef(this.actorId.getParent());
+        }
+
         Map<String, String> metadata = new HashMap<>();
         options.ifPresent(opts -> {
             invocationRequestBuilder.setAsync(true);
