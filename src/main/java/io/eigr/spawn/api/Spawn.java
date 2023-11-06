@@ -311,9 +311,7 @@ public final class Spawn {
          */
         public SpawnSystem withActor(Class<?> actorKlass) {
             Optional<Entity> maybeEntity = getEntity(actorKlass);
-            if (maybeEntity.isPresent()) {
-                this.entities.add(maybeEntity.get());
-            }
+            maybeEntity.ifPresent(this.entities::add);
             return this;
         }
 
@@ -330,9 +328,7 @@ public final class Spawn {
          */
         public SpawnSystem withActor(Class<?> actorKlass, Object arg, ActorFactory factory) {
             Optional<Entity> maybeEntity = getEntity(actorKlass, arg, factory);
-            if (maybeEntity.isPresent()) {
-                this.entities.add(maybeEntity.get());
-            }
+            maybeEntity.ifPresent(this.entities::add);
             return this;
         }
 

@@ -10,5 +10,7 @@ public interface SpawnClient {
     Protocol.RegistrationResponse register(Protocol.RegistrationRequest registration) throws ActorRegistrationException;
     Protocol.SpawnResponse spawn(Protocol.SpawnRequest registration) throws ActorCreationException;
     Protocol.InvocationResponse invoke(Protocol.InvocationRequest request) throws ActorInvocationException;
+
+    void invokeAsync(Protocol.InvocationRequest request);
 }
 

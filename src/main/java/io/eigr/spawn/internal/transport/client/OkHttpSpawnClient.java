@@ -8,6 +8,7 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -92,6 +93,31 @@ public final class OkHttpSpawnClient implements SpawnClient {
         } catch (Exception e) {
             throw new ActorInvocationException(e);
         }
+    }
+
+    @Override
+    public void invokeAsync(Protocol.InvocationRequest request) {
+        RequestBody body = RequestBody.create(
+                request.toByteArray(), MediaType.parse(SPAWN_MEDIA_TYPE));
+
+        Request invocationRequest = new Request.Builder()
+                .url(makeURLForSystemAndActor(request.getSystem().getName(), request.getActor().getId().getName()))
+                .post(body)
+                .build();
+
+        Call invocationCall = client.newCall(invocationRequest);
+        invocationCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(final Call call, IOException err) {
+                log.error("Error while actor invoke async.", err);
+            }
+
+            @Override
+            public void onResponse(Call call, final Response response) throws IOException {
+                String res = response.body().string();
+                log.trace("actor invoke async response [{}].", res);
+            }
+        });
     }
 
     private String makeURLForSystemAndActor(String systemName, String actorName) {

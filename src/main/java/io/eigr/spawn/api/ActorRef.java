@@ -45,7 +45,7 @@ public final class ActorRef {
         if (identity.isParent()) {
             actorId = buildActorId(identity.getSystem(), identity.getName(), identity.getParent());
 
-            spawnActor(actorId, client);
+            //spawnActor(actorId, client);
         } else {
             actorId = buildActorId(identity.getSystem(), identity.getName());
         }
@@ -207,9 +207,9 @@ public final class ActorRef {
      * @param value  the action argument object.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value) throws ActorInvocationException {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action, T value) throws ActorInvocationException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
-        invokeActor(action, value, null, Optional.of(opts));
+        invokeActorAsync(action, value, Optional.of(opts));
     }
 
     /**
@@ -223,7 +223,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeAsync(String action, S value, InvocationOpts opts) throws ActorInvocationException {
+    public <T extends GeneratedMessageV3> void invokeAsync(String action, T value, InvocationOpts opts) throws ActorInvocationException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delaySeconds(opts.getDelaySeconds())
@@ -231,7 +231,7 @@ public final class ActorRef {
                 .timeoutSeconds(opts.getTimeoutSeconds())
                 .build();
 
-        invokeActor(action, value, null, Optional.of(mergedOpts));
+        invokeActorAsync(action, value, Optional.of(mergedOpts));
     }
 
     public String getActorSystem() {
@@ -264,6 +264,10 @@ public final class ActorRef {
 
         Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
 
+        if (Objects.nonNull(this.actorId.getParent()) && !this.actorId.getParent().isEmpty()) {
+            invocationRequestBuilder.setRegisterRef(this.actorId.getParent());
+        }
+
         Map<String, String> metadata = new HashMap<>();
         options.ifPresent(opts -> {
             invocationRequestBuilder.setAsync(opts.isAsync());
@@ -285,6 +289,7 @@ public final class ActorRef {
                 .setActor(actorRef)
                 .setActionName(cmd)
                 .setValue(commandArg)
+
                 .putAllMetadata(metadata)
                 .build();
 
@@ -311,5 +316,37 @@ public final class ActorRef {
         }
 
         return Optional.empty();
+    }
+
+    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeActorAsync(
+            String cmd, S argument, Optional<InvocationOpts> options) {
+        Objects.requireNonNull(this.actorId, "ActorId cannot be null");
+
+        Protocol.InvocationRequest.Builder invocationRequestBuilder = Protocol.InvocationRequest.newBuilder();
+
+        Map<String, String> metadata = new HashMap<>();
+        options.ifPresent(opts -> {
+            invocationRequestBuilder.setAsync(true);
+            opts.getDelaySeconds().ifPresent(invocationRequestBuilder::setScheduledTo);
+            // 'scheduledTo' override 'delay' if both is set.
+            opts.getScheduledTo()
+                    .ifPresent(scheduleTo -> invocationRequestBuilder.setScheduledTo(opts.getScheduleTimeInLong()));
+        });
+
+        final ActorOuterClass.Actor actorRef = ActorOuterClass.Actor.newBuilder()
+                .setId(this.actorId)
+                .build();
+
+        Any commandArg = Any.pack(argument);
+
+        invocationRequestBuilder
+                .setSystem(ActorOuterClass.ActorSystem.newBuilder().setName(this.actorId.getSystem()).build())
+                .setActor(actorRef)
+                .setActionName(cmd)
+                .setValue(commandArg)
+                .putAllMetadata(metadata)
+                .build();
+
+        this.client.invokeAsync(invocationRequestBuilder.build());
     }
 }
