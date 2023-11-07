@@ -94,7 +94,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v1.2.5</version>
+   <version>v1.2.6</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -128,7 +128,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v1.2.5</version>
+         <version>v1.2.6</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
