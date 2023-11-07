@@ -330,7 +330,6 @@ public final class ActorRef {
 
         Map<String, String> metadata = new HashMap<>();
         options.ifPresent(opts -> {
-            invocationRequestBuilder.setAsync(true);
             opts.getDelaySeconds().ifPresent(invocationRequestBuilder::setScheduledTo);
             // 'scheduledTo' override 'delay' if both is set.
             opts.getScheduledTo()
@@ -344,6 +343,7 @@ public final class ActorRef {
         Any commandArg = Any.pack(argument);
 
         invocationRequestBuilder
+                .setAsync(true)
                 .setSystem(ActorOuterClass.ActorSystem.newBuilder().setName(this.actorId.getSystem()).build())
                 .setActor(actorRef)
                 .setActionName(cmd)
