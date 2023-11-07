@@ -52,6 +52,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
         Call call = client.newCall(request);
         try (Response response = call.execute()) {
             assert response.body() != null;
+            log.debug("Decode response from {}", response.body().bytes());
             return Protocol.RegistrationResponse.parseFrom(
                     Objects.requireNonNull(response.body()
                     ).bytes());
