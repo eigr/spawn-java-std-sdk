@@ -354,7 +354,7 @@ public final class Spawn {
                     .expireAfterWrite(Duration.ofSeconds(CACHE_EXPIRE_AFTER_WRITE_SECONDS))
                     .build();
 
-            this.client = new OkHttpSpawnClient(this.system, this.transportOpts.getProxyHost(), this.transportOpts.getProxyPort());
+            this.client = new OkHttpSpawnClient(this.system, this.transportOpts);
 
             return new Spawn(this);
         }

@@ -1,6 +1,7 @@
 package io.eigr.spawn.internal.transport.client;
 
 import io.eigr.functions.protocol.Protocol;
+import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.api.exceptions.ActorRegistrationException;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 public final class OkHttpSpawnClient implements SpawnClient {
@@ -20,15 +22,16 @@ public final class OkHttpSpawnClient implements SpawnClient {
 
     private static final String SPAWN_ACTOR_SPAWN = "/api/v1/system/%s/actors/spawn";
 
+    private final Executor executor;
+
     private final String system;
-    private final String proxyHost;
-    private final int proxyPort;
+
+    private final TransportOpts opts;
     private final OkHttpClient client;
 
-    public OkHttpSpawnClient(String system, String proxyHost, int proxyPort) {
+    public OkHttpSpawnClient(String system, TransportOpts opts) {
         this.system = system;
-        this.proxyHost = proxyHost;
-        this.proxyPort = proxyPort;
+        this.opts = opts;
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(120, TimeUnit.SECONDS)
                 .readTimeout(120, TimeUnit.SECONDS)
@@ -37,6 +40,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
                 .retryOnConnectionFailure(true)
                 .connectionPool(new ConnectionPool(256, 100, TimeUnit.SECONDS))
                 .build();
+        this.executor =  opts.getExecutor();
     }
 
     @Override
@@ -97,26 +101,28 @@ public final class OkHttpSpawnClient implements SpawnClient {
 
     @Override
     public void invokeAsync(Protocol.InvocationRequest request) {
-        RequestBody body = RequestBody.create(
-                request.toByteArray(), MediaType.parse(SPAWN_MEDIA_TYPE));
+        executor.execute(() -> {
+            RequestBody body = RequestBody.create(
+                    request.toByteArray(), MediaType.parse(SPAWN_MEDIA_TYPE));
 
-        Request invocationRequest = new Request.Builder()
-                .url(makeURLForSystemAndActor(request.getSystem().getName(), request.getActor().getId().getName()))
-                .post(body)
-                .build();
+            Request invocationRequest = new Request.Builder()
+                    .url(makeURLForSystemAndActor(request.getSystem().getName(), request.getActor().getId().getName()))
+                    .post(body)
+                    .build();
 
-        Call invocationCall = client.newCall(invocationRequest);
-        invocationCall.enqueue(new Callback() {
-            @Override
-            public void onFailure(final Call call, IOException err) {
-                log.error("Error while actor invoke async.", err);
-            }
+            Call invocationCall = client.newCall(invocationRequest);
+            invocationCall.enqueue(new Callback() {
+                @Override
+                public void onFailure(final Call call, IOException err) {
+                    log.warn("Error while Actor invoke async.", err);
+                }
 
-            @Override
-            public void onResponse(Call call, final Response response) throws IOException {
-                String res = response.body().string();
-                log.trace("actor invoke async response [{}].", res);
-            }
+                @Override
+                public void onResponse(Call call, final Response response) throws IOException {
+                    String res = response.body().string();
+                    log.trace("Actor invoke async response [{}].", res);
+                }
+            });
         });
     }
 
@@ -126,7 +132,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
     }
 
     private String makeURLFrom(String uri) {
-        return String.format("http://%s:%S%s", this.proxyHost, this.proxyPort, uri);
+        return String.format("http://%s:%S%s", this.opts.getProxyHost(), this.opts.getPort(), uri);
     }
 
     private String makeSpawnURLFrom(String systemName) {
