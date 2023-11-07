@@ -30,7 +30,7 @@ public final class ActorIdentity {
     }
 
     public static ActorIdentity of(String system, String name, String parent) {
-        return new ActorIdentity(system, name, parent, true);
+        return new ActorIdentity(system, name, parent, false);
     }
 
     public static ActorIdentity of(String system, String name, boolean lookup) {
