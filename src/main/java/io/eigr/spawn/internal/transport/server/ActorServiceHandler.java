@@ -9,12 +9,11 @@ import com.sun.net.httpserver.HttpHandler;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass.ActorId;
 import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
-import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 import io.eigr.spawn.internal.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,9 +96,9 @@ public final class ActorServiceHandler implements HttpHandler {
                 }
 
                 Any encodedValue;
-                if (Objects.isNull(valueResponse.getResponse())){
+                if (Objects.isNull(valueResponse.getResponse())) {
                     encodedValue = Any.pack(Protocol.Noop.getDefaultInstance());
-                }else {
+                } else {
                     encodedValue = Any.pack(valueResponse.getResponse());
                 }
 
@@ -150,7 +149,11 @@ public final class ActorServiceHandler implements HttpHandler {
 
                 ActorContext actorContext;
                 if (context.hasState()) {
-                    Object state = context.getState().unpack(entity.getStateType());
+                    Any anyCtxState = context.getState();
+                    log.debug("[{}] trying to get the state of the Actor {}. Parse Any type {} from State type {}",
+                            system, actor, anyCtxState, entity.getStateType().getSimpleName());
+
+                    Object state = anyCtxState.unpack(entity.getStateType());
                     actorContext = new ActorContext(this.spawn, state);
                 } else {
                     actorContext = new ActorContext(this.spawn);
