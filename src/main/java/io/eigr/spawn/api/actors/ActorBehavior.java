@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class ActorBehavior {
+public final class ActorBehavior {
     public interface ActorOption extends Consumer<ActorBehavior> {}
 
     private String name;
