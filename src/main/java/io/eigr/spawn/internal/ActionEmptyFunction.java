@@ -1,3 +1,3 @@
-package io.eigr.spawn.api.actors;
+package io.eigr.spawn.internal;
 
 public interface ActionEmptyFunction {}

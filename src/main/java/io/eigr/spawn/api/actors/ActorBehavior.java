@@ -3,6 +3,9 @@ package io.eigr.spawn.api.actors;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageOrBuilder;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
+import io.eigr.spawn.internal.ActionArgumentFunction;
+import io.eigr.spawn.internal.ActionEmptyFunction;
+import io.eigr.spawn.internal.ActionNoArgumentFunction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +17,8 @@ public class ActorBehavior {
     public interface ActorOption extends Consumer<ActorBehavior> {}
 
     private String name;
-    private String system;
+
+    private String channel;
 
     Class<? extends GeneratedMessageV3> stateType;
 
@@ -31,6 +35,22 @@ public class ActorBehavior {
                 .forEach(option -> option.accept(this));
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public long getDeactivatedTimeout() {
+        return deactivatedTimeout;
+    }
+
+    public long getSnapshotTimeout() {
+        return snapshotTimeout;
+    }
+
     public Class<? extends GeneratedMessageV3> getStateType() {
         return this.stateType;
     }
@@ -40,27 +60,31 @@ public class ActorBehavior {
     }
 
     public static ActorOption name(String actorName) {
-        return model -> model.name = actorName;
+        return instance -> instance.name = actorName;
     }
 
-    public static ActorOption system(String actorSystem) {
-        return model -> model.system = actorSystem;
+    public static ActorOption channel(String channel) {
+        return instance -> instance.channel = channel;
     }
 
     public static ActorOption deactivated(long timeout) {
-        return model -> model.deactivatedTimeout = timeout;
+        return instance -> instance.deactivatedTimeout = timeout;
     }
 
     public static ActorOption snapshot(long timeout) {
-        return model -> model.snapshotTimeout = timeout;
+        return instance -> instance.snapshotTimeout = timeout;
     }
 
     public static ActorOption action(String name, ActionNoArgumentFunction action) {
-        return model -> model.actions.put(name, action);
+        return instance -> instance.actions.put(name, action);
     }
 
     public static <T extends MessageOrBuilder> ActorOption action(String name, ActionArgumentFunction<T> action) {
-        return model -> model.actions.put(name, action);
+        return instance -> instance.actions.put(name, action);
+    }
+
+    public static ActorOption init(ActionNoArgumentFunction action) {
+        return instance -> instance.actions.put("Init", action);
     }
 
     public <A extends MessageOrBuilder> Value call(String action, ActorContext context) throws ActorNotFoundException {
@@ -69,7 +93,7 @@ public class ActorBehavior {
         }
 
         throw new ActorNotFoundException(
-                String.format("Action [%s] not found for Actor [%s::%s]", action, system, name));
+                String.format("Action [%s] not found for Actor [%s]", action, name));
     }
 
     public <A extends MessageOrBuilder> Value call(String action, ActorContext context, A argument) throws ActorNotFoundException {
@@ -78,7 +102,7 @@ public class ActorBehavior {
         }
 
         throw new ActorNotFoundException(
-                String.format("Action [%s] not found for Actor [%s::%s]", action, system, name));
+                String.format("Action [%s] not found for Actor [%s]", action, name));
     }
 
 }
