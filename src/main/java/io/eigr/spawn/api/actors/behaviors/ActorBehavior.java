@@ -1,11 +1,14 @@
-package io.eigr.spawn.api.actors;
+package io.eigr.spawn.api.actors.behaviors;
 
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageOrBuilder;
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
 import io.eigr.spawn.internal.ActionArgumentFunction;
 import io.eigr.spawn.internal.ActionEmptyFunction;
 import io.eigr.spawn.internal.ActionNoArgumentFunction;
+import io.eigr.spawn.internal.ActorKind;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +16,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public final class ActorBehavior {
+public abstract class ActorBehavior {
     public interface ActorOption extends Consumer<ActorBehavior> {}
 
     private String name;
@@ -34,6 +37,8 @@ public final class ActorBehavior {
                 .orElseGet(Stream::empty)
                 .forEach(option -> option.accept(this));
     }
+
+    protected abstract ActorKind getActorType();
 
     public String getName() {
         return name;
@@ -75,16 +80,16 @@ public final class ActorBehavior {
         return instance -> instance.snapshotTimeout = timeout;
     }
 
+    public static ActorOption init(ActionNoArgumentFunction action) {
+        return instance -> instance.actions.put("Init", action);
+    }
+
     public static ActorOption action(String name, ActionNoArgumentFunction action) {
         return instance -> instance.actions.put(name, action);
     }
 
     public static <T extends MessageOrBuilder> ActorOption action(String name, ActionArgumentFunction<T> action) {
         return instance -> instance.actions.put(name, action);
-    }
-
-    public static ActorOption init(ActionNoArgumentFunction action) {
-        return instance -> instance.actions.put("Init", action);
     }
 
     public <A extends MessageOrBuilder> Value call(String action, ActorContext context) throws ActorNotFoundException {

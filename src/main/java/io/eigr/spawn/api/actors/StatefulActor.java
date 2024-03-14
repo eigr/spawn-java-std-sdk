@@ -1,5 +1,7 @@
 package io.eigr.spawn.api.actors;
 
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+
 import java.lang.reflect.ParameterizedType;
 
 public abstract class StatefulActor<S> {
