@@ -1,6 +1,6 @@
 package io.eigr.spawn.api.actors.annotations.stateful;
 
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.GeneratedMessage;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,7 +14,7 @@ public @interface StatefulUnNamedActor {
 
     String name() default "";
 
-    Class<? extends GeneratedMessageV3> stateType();
+    Class<? extends GeneratedMessage> stateType();
 
     long deactivatedTimeout() default 60000;
 

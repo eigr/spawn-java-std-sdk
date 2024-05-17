@@ -3,7 +3,7 @@ package io.eigr.spawn.api;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.GeneratedMessage;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
@@ -104,7 +104,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType) throws ActorInvocationException {
+    public <T extends GeneratedMessage> Optional<T> invoke(String action, Class<T> outputType) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.empty());
         return res.map(outputType::cast);
 
@@ -122,7 +122,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws ActorInvocationException {
+    public <T extends GeneratedMessage> Optional<T> invoke(String action, Class<T> outputType, InvocationOpts opts) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, Empty.getDefaultInstance(), outputType, Optional.ofNullable(opts));
         return res.map(outputType::cast);
 
@@ -139,7 +139,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType) throws ActorInvocationException {
+    public <T extends GeneratedMessage, S extends GeneratedMessage> Optional<T> invoke(String action, S value, Class<T> outputType) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, value, outputType, Optional.empty());
         return res.map(outputType::cast);
 
@@ -158,7 +158,7 @@ public final class ActorRef {
      * @return an Optional containing, or not, the response object to the Action call
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws ActorInvocationException {
+    public <T extends GeneratedMessage, S extends GeneratedMessage> Optional<T> invoke(String action, S value, Class<T> outputType, InvocationOpts opts) throws ActorInvocationException {
         Optional<T> res = invokeActor(action, value, outputType, Optional.ofNullable(opts));
         return res.map(outputType::cast);
 
@@ -172,7 +172,7 @@ public final class ActorRef {
      * @param action name of the action to be called.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action) throws ActorInvocationException {
+    public <T extends GeneratedMessage> void invokeAsync(String action) throws ActorInvocationException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActor(action, Empty.getDefaultInstance(), null, Optional.of(opts));
     }
@@ -187,7 +187,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action, InvocationOpts opts) throws ActorInvocationException {
+    public <T extends GeneratedMessage> void invokeAsync(String action, InvocationOpts opts) throws ActorInvocationException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delaySeconds(opts.getDelaySeconds())
@@ -207,7 +207,7 @@ public final class ActorRef {
      * @param value  the action argument object.
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action, T value) throws ActorInvocationException {
+    public <T extends GeneratedMessage> void invokeAsync(String action, T value) throws ActorInvocationException {
         InvocationOpts opts = InvocationOpts.builder().async(true).build();
         invokeActorAsync(action, value, Optional.of(opts));
     }
@@ -223,7 +223,7 @@ public final class ActorRef {
      *               Please see the {@link io.eigr.spawn.api.InvocationOpts} class for more information
      * @since 0.0.1
      */
-    public <T extends GeneratedMessageV3> void invokeAsync(String action, T value, InvocationOpts opts) throws ActorInvocationException {
+    public <T extends GeneratedMessage> void invokeAsync(String action, T value, InvocationOpts opts) throws ActorInvocationException {
         InvocationOpts mergedOpts = InvocationOpts.builder()
                 .async(true)
                 .delaySeconds(opts.getDelaySeconds())
@@ -258,7 +258,7 @@ public final class ActorRef {
         return false;
     }
 
-    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> Optional<T> invokeActor(
+    private <T extends GeneratedMessage, S extends GeneratedMessage> Optional<T> invokeActor(
             String cmd, S argument, Class<T> outputType, Optional<InvocationOpts> options) throws ActorInvocationException {
         Objects.requireNonNull(this.actorId, "ActorId cannot be null");
 
@@ -318,7 +318,7 @@ public final class ActorRef {
         return Optional.empty();
     }
 
-    private <T extends GeneratedMessageV3, S extends GeneratedMessageV3> void invokeActorAsync(
+    private <T extends GeneratedMessage, S extends GeneratedMessage> void invokeActorAsync(
             String cmd, S argument, Optional<InvocationOpts> options) {
         Objects.requireNonNull(this.actorId, "ActorId cannot be null");
 
