@@ -83,7 +83,7 @@ public final class ActorServiceHandler implements HttpHandler {
             Any value = actorInvocationRequest.getValue();
 
             Optional<Value> maybeValueResponse = callAction(system, actor, parent, commandName, value, context);
-            log.info("Actor {} return ActorInvocationResponse for command {}. Result value: {}",
+            log.debug("Actor {} return ActorInvocationResponse for command {}. Result value: {}",
                     actor, commandName, maybeValueResponse);
 
             if (maybeValueResponse.isPresent()) {
