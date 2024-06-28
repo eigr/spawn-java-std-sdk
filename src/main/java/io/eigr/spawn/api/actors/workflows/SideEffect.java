@@ -1,7 +1,7 @@
 package io.eigr.spawn.api.actors.workflows;
 
 import com.google.protobuf.Any;
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.GeneratedMessage;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.InvocationOpts;
@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 
-public final class SideEffect<T extends GeneratedMessageV3> {
+public final class SideEffect<T extends GeneratedMessage> {
 
     private final ActorRef actor;
     private final String command;
@@ -32,11 +32,11 @@ public final class SideEffect<T extends GeneratedMessageV3> {
         this.opts = Optional.of(opts);
     }
 
-    public static <T extends GeneratedMessageV3> SideEffect to(ActorRef actor, String command, T payload) {
+    public static <T extends GeneratedMessage> SideEffect to(ActorRef actor, String command, T payload) {
         return new SideEffect(actor, command, payload);
     }
 
-    public static <T extends GeneratedMessageV3> SideEffect to(ActorRef actor, String command, T payload, InvocationOpts opts) {
+    public static <T extends GeneratedMessage> SideEffect to(ActorRef actor, String command, T payload, InvocationOpts opts) {
         return new SideEffect(actor, command, payload, opts);
     }
 
