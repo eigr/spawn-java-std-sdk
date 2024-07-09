@@ -16,7 +16,7 @@
         <junit.version>4.13.2</junit.version>
         <mysql-connector.version>8.4.0</mysql-connector.version>
         <okhttp.version>4.12.0</okhttp.version>
-        <protobuf.version>4.26.1</protobuf.version>
+        <protobuf.version>4.27.2</protobuf.version>
         <testcontainers.version>1.19.8</testcontainers.version>
     </properties>
 
@@ -110,7 +110,7 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:4.27.2:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.65.0:exe:${os.detected.classifier}</pluginArtifact>
                 </configuration>
