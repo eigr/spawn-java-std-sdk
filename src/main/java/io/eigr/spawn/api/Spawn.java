@@ -176,7 +176,9 @@ public final class Spawn {
     }
 
     private void registerActorSystem() throws ActorRegistrationException {
-        ActorOuterClass.Registry registry = ActorOuterClass.Registry.newBuilder().putAllActors(getActors(this.entities)).build();
+        ActorOuterClass.Registry registry = ActorOuterClass.Registry.newBuilder()
+                .putAllActors(getActors(this.entities))
+                .build();
 
         ActorOuterClass.ActorSystem actorSystem = ActorOuterClass.ActorSystem.newBuilder()
                 .setName(this.system)
@@ -197,11 +199,14 @@ public final class Spawn {
                 .build();
 
         log.debug("Registering Actors on Proxy. Registry: {}", req);
+        System.out.println(String.format("Registering Actors on Proxy. Registry: %s", req));
         this.client.register(req);
     }
 
     private Map<String, ActorOuterClass.Actor> getActors(List<Entity> entities) {
+        System.out.println(String.format("Entities %s", entities.size()));
         return entities.stream().map(actorEntity -> {
+            System.out.println(String.format("Register Actor Entity %s", actorEntity.getActorName()));
             ActorOuterClass.ActorSnapshotStrategy snapshotStrategy;
             if (actorEntity.isStateful()) {
                 snapshotStrategy = ActorOuterClass.ActorSnapshotStrategy.newBuilder()
@@ -231,7 +236,10 @@ public final class Spawn {
 
             Map<String, String> tags = new HashMap<>();
             ActorOuterClass.Metadata metadata = ActorOuterClass.Metadata.newBuilder()
-                    .setChannelGroup(actorEntity.getChannel()).putAllTags(tags)
+                    .addChannelGroup(
+                            ActorOuterClass.Channel.newBuilder()
+                                    .setTopic(actorEntity.getChannel())
+                                    .build())
                     .build();
 
             return ActorOuterClass.Actor.newBuilder()
@@ -339,7 +347,7 @@ public final class Spawn {
          * @return the SpawnSystem instance
          * @since 0.0.1
          */
-        public <T extends BaseActor> SpawnSystem withActor(Class<T> actorKlass) {
+        public <T extends BaseActor> SpawnSystem withActor(Class<T> actorKlass) throws ActorCreationException {
             Optional<Entity> maybeEntity = getEntity(actorKlass);
             maybeEntity.ifPresent(this.entities::add);
             return this;
@@ -372,7 +380,7 @@ public final class Spawn {
             return new Spawn(this);
         }
 
-        private Optional<Entity> getEntity(Class<?> actorKlass) {
+        private Optional<Entity> getEntity(Class<?> actorKlass) throws ActorCreationException {
             Optional<Entity> maybeEntity = mapEntity(actorKlass);
 
             if (maybeEntity.isPresent()) {
@@ -382,15 +390,19 @@ public final class Spawn {
             return Optional.empty();
         }
 
-        private Optional<Entity> mapEntity(Class<?> actorKlass) {
-            if (actorKlass.isAssignableFrom(StatefulActor.class)) {
+        private Optional<Entity> mapEntity(Class<?> actorKlass) throws ActorCreationException {
+            System.out.println(String.format("Klass %s", actorKlass.getSuperclass()));
+            if (StatefulActor.class.isAssignableFrom(actorKlass)) {
+                System.out.println("StatefulActor");
                 return Optional.of(Entity.fromStatefulActorToEntity(ctx, actorKlass));
             }
 
-            if (actorKlass.isAssignableFrom(StatelessActor.class)) {
+            if (StatelessActor.class.isAssignableFrom(actorKlass)) {
+                System.out.println("StatelessActor");
                 return Optional.of(Entity.fromStatelessActorToEntity(ctx, actorKlass));
             }
 
+            System.out.println("empty");
             return Optional.empty();
         }
     }

@@ -42,7 +42,7 @@ public class WorkflowTest {
     public void testBroadcastBuilder() {
         Broadcast broadcast = Broadcast.to("test.channel", "hi", Actor.Request.getDefaultInstance());
         final Protocol.Broadcast protocolBroadcast = broadcast.build();
-        assertEquals("hi", protocolBroadcast.getActionName());
+        assertEquals("hi", protocolBroadcast.getChannelGroup());
         assertEquals("test.channel", protocolBroadcast.getChannelGroup());
         assertNotNull(protocolBroadcast.getValue());
     }

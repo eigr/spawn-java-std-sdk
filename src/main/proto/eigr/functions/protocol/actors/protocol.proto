@@ -253,7 +253,7 @@ message ProxyInfo {
     int32 protocol_minor_version = 2;
 
     string proxy_name = 3;
-    
+
     string proxy_version = 4;
 }
 
@@ -274,11 +274,8 @@ message SideEffect {
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/PublishSubscribeChannel.html
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/BroadcastAggregate.html
 message Broadcast {
-    // Channel of target Actors
+    // Target topic or channel
     string channel_group = 1;
-
-    // Action. Only Actors that have this action will run successfully
-    string action_name = 2;
 
     // Payload
     oneof payload {
@@ -291,27 +288,27 @@ message Broadcast {
 // Useful for handle `pipes` pattern:
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/PipesAndFilters.html
 message Pipe {
-  // Target Actor
-  string actor = 1;
+    // Target Actor
+    string actor = 1;
 
-  // Action. 
-  string action_name = 2;
+    // Action.
+    string action_name = 2;
 }
 
 // Sends the input of a action of an Actor to the input of another action of an Actor
 // Useful for handle `content-basead router` pattern
 // https://www.enterpriseintegrationpatterns.com/patterns/messaging/ContentBasedRouter.html
 message Forward {
-  // Target Actor
-  string actor = 1;
+    // Target Actor
+    string actor = 1;
 
-  // Action. 
-  string action_name = 2;
+    // Action.
+    string action_name = 2;
 }
 
-// Container for archicetural message patterns 
+// Container for archicetural message patterns
 message Workflow {
-    
+
     Broadcast broadcast = 2;
 
     repeated SideEffect effects = 1;
@@ -328,12 +325,13 @@ message Workflow {
 //   * system: See ActorSystem message.
 //   * actor: The target Actor, i.e. the one that the user function is calling to perform some computation.
 //   * caller: The caller Actor
-//   * action_name: The function or method on the target Actor that will receive this request 
+//   * action_name: The function or method on the target Actor that will receive this request
 //     and perform some useful computation with the sent data.
 //   * value: This is the value sent by the user function to be computed by the request's target Actor action.
-//   * async: Indicates whether the action should be processed synchronously, where a response should be sent back to the user function, 
+//   * async: Indicates whether the action should be processed synchronously, where a response should be sent back to the user function,
 //            or whether the action should be processed asynchronously, i.e. no response sent to the caller and no waiting.
 //   * metadata: Meta information or headers
+//   * register_ref: If the invocation should register the specific actor with the given name without having to call register before
 message InvocationRequest {
 
     eigr.functions.protocol.actors.ActorSystem system = 1;

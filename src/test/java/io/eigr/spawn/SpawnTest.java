@@ -31,7 +31,7 @@ public class SpawnTest {
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system", injector)
                 .withActor(JoeActor.class)
-                .withActor(ActorWithConstructor.class)
+                //.withActor(ActorWithConstructor.class)
                 .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)
@@ -40,6 +40,7 @@ public class SpawnTest {
                 )
                 .build();
 
+        System.out.println("Starting ActorSystem...");
         spawnSystem.start();
     }
 
@@ -55,7 +56,7 @@ public class SpawnTest {
                 .build();
 
         Optional<Actor.Reply> maybeReply =
-                joeActor.invoke("setLanguage", msg, Actor.Reply.class);
+                joeActor.invoke("SetLanguage", msg, Actor.Reply.class);
 
         if (maybeReply.isPresent()) {
             Actor.Reply reply = maybeReply.get();

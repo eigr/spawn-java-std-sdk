@@ -4,18 +4,26 @@ import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.actors.StatefulActor;
-import io.eigr.spawn.api.actors.annotations.*;
+import io.eigr.spawn.api.actors.StatelessActor;
+import io.eigr.spawn.api.actors.annotations.Action;
+import io.eigr.spawn.api.actors.annotations.TimerAction;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.UnNamedActorBehavior;
+import io.eigr.spawn.api.exceptions.ActorCreationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -80,170 +88,224 @@ public final class Entity {
         this.actorFactory = actorFactory;
     }
 
-
-
-
-    public String getActorName() {
-        return actorName;
+    public static Entity fromStatelessActorToEntity(BehaviorCtx ctx, Class<?> actor) {
+        return null;
     }
 
-    public void setActorName(String actorName) {
-        this.actorName = actorName;
-    }
+    public static Entity fromStatefulActorToEntity(BehaviorCtx ctx, Class<?> actor) throws ActorCreationException {
+        try {
+            Constructor<?> constructor = actor.getConstructor();
+            StatefulActor stActor = (StatefulActor) constructor.newInstance();
+            Class<?> stateType = stActor.getStateType();
+            ActorBehavior behavior = stActor.configure(ctx);
 
-    public Class<?> getActorType() {
-        return actorType;
-    }
-
-    public ActorOuterClass.Kind getKind() {
-        return kind;
-    }
-
-    public Class getStateType() {
-        return stateType;
-    }
-
-    public String getActorBeanName() {
-        return actorBeanName;
-    }
-
-    public boolean isStateful() {
-        return stateful;
-    }
-
-    public long getDeactivateTimeout() {
-        return deactivateTimeout;
-    }
-
-    public long getSnapshotTimeout() {
-        return snapshotTimeout;
-    }
-
-    public Map<String, EntityMethod> getActions() {
-        return actions;
-    }
-
-    public Map<String, EntityMethod> getTimerActions() {
-        return timerActions;
-    }
-
-    public int getMinPoolSize() {
-        return minPoolSize;
-    }
-
-    public int getMaxPoolSize() {
-        return maxPoolSize;
-    }
-
-    public String getChannel(){ return channel; }
-
-    public enum EntityMethodType {
-        DIRECT, TIMER
-    }
-
-    public Optional<Object> getActorArg() {
-        return actorArg;
-    }
-
-    public Optional<ActorFactory> getActorFactory() {
-        return actorFactory;
-    }
-
-    public static final class EntityMethod {
-        private String name;
-
-        private EntityMethodType type;
-
-        private int fixedPeriod;
-
-        private Method method;
-        private Class<?> inputType;
-        private Class<?> outputType;
-
-        public EntityMethod(
-                String name, EntityMethodType type, int fixedPeriod, Method method, Class<?> inputType, Class<?> outputType) {
-            this.name = name;
-            this.type = type;
-            this.fixedPeriod = fixedPeriod;
-            this.method = method;
-            this.inputType = inputType;
-            this.outputType = outputType;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public EntityMethodType getType() {
-            return type;
-        }
-
-        public int getFixedPeriod() {
-            return fixedPeriod;
-        }
-
-        public Method getMethod() {
-            return method;
-        }
-
-        public Class getInputType() {
-            int arity = method.getParameterTypes().length;
-
-            if (arity == 2 && Objects.isNull(inputType)) {
-                for (Class<?> parameterType : method.getParameterTypes()) {
-                    if (!inputType.isAssignableFrom(ActorContext.class)) {
-                        return parameterType;
-                    }
-                }
+            if (behavior.getClass().isAssignableFrom(NamedActorBehavior.class)) {
+                Entity entity = buildNamedActor(stateType, stActor, (NamedActorBehavior) behavior);
+                System.out.println(String.format("Stateful NamedActorBehavior %s", entity));
+                return entity;
             }
-            return inputType;
+
+            if (behavior.getClass().isAssignableFrom(UnNamedActorBehavior.class)) {
+                return buildUnNamedActor(stateType, stActor, (UnNamedActorBehavior) behavior);
+            }
+
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
+                 IllegalAccessException e) {
+            throw new ActorCreationException();
         }
 
-        public Class<?> getOutputType() {
-            return outputType;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("EntityMethod{");
-            sb.append("name='").append(name).append('\'');
-            sb.append(", type=").append(type);
-            sb.append(", fixedPeriod=").append(fixedPeriod);
-            sb.append(", method=").append(method);
-            sb.append(", inputType=").append(inputType);
-            sb.append(", outputType=").append(outputType);
-            sb.append('}');
-            return sb.toString();
-        }
+        throw new ActorCreationException();
     }
 
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("Entity{");
-        sb.append("actorName='").append(actorName).append('\'');
-        sb.append(", actorType=").append(actorType);
-        sb.append(", kind=").append(kind);
-        sb.append(", stateType=").append(stateType);
-        sb.append(", actorBeanName='").append(actorBeanName).append('\'');
-        sb.append(", stateful=").append(stateful);
-        sb.append(", deactivateTimeout=").append(deactivateTimeout);
-        sb.append(", snapshotTimeout=").append(snapshotTimeout);
-        sb.append(", actions=").append(actions);
-        sb.append(", timerActions=").append(timerActions);
-        sb.append(", minPoolSize=").append(minPoolSize);
-        sb.append(", maxPoolSize=").append(maxPoolSize);
-        sb.append(", channel=").append(channel);
-        sb.append('}');
-        return sb.toString();
+    private static Entity buildNamedActor(Class<?> stateType, StatefulActor actor, NamedActorBehavior behavior) {
+        String actorName = behavior.getName();
+        ActorKind kind = behavior.getActorType();
+        String channel = behavior.getChannel();
+        long deactivateTimeout = behavior.getDeactivatedTimeout();
+        long snapshotTimeout = behavior.getSnapshotTimeout();
+
+        final Map<String, Entity.EntityMethod> actions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.NORMAL_DISPATCH))
+                .map(entry -> {
+            String actionName = entry.getKey();
+            ActionEnvelope envelope = entry.getValue();
+
+            return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.DIRECT, 0, null, null, null));
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        final Map<String, Entity.EntityMethod> timerActions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.TIMER_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    int timer = entry.getValue().getConfig().getTimer();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.DIRECT, timer, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Entity entityType = new Entity(
+                actorName,
+                actor.getClass(),
+                getKind(kind),
+                actor.getStateType(),
+                actorName,
+                actor.isStateful(),
+                deactivateTimeout,
+                snapshotTimeout,
+                actions,
+                timerActions,
+                0,
+                0,
+                channel,
+                Optional.empty(),
+                Optional.empty());
+
+        return entityType;
     }
 
-    public static Entity fromStatefulActorToEntity(BehaviorCtx ctx, Class<?> entity) {
-        return null;
+    private static Entity buildNamedActor(Class<?> stateType, StatelessActor actor, NamedActorBehavior behavior) {
+        String actorName = behavior.getName();
+        ActorKind kind = behavior.getActorType();
+        String channel = behavior.getChannel();
+        long deactivateTimeout = behavior.getDeactivatedTimeout();
+        long snapshotTimeout = behavior.getSnapshotTimeout();
+
+        final Map<String, Entity.EntityMethod> actions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.NORMAL_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    ActionEnvelope envelope = entry.getValue();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.DIRECT, 0, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        final Map<String, Entity.EntityMethod> timerActions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.TIMER_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    int timer = entry.getValue().getConfig().getTimer();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.DIRECT, timer, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Entity entityType = new Entity(
+                actorName,
+                actor.getClass(),
+                getKind(kind),
+                null,
+                actorName,
+                actor.isStateful(),
+                deactivateTimeout,
+                snapshotTimeout,
+                actions,
+                timerActions,
+                0,
+                0,
+                channel,
+                Optional.empty(),
+                Optional.empty());
+
+        return entityType;
     }
 
-    public static Entity fromStatelessActorToEntity(BehaviorCtx ctx, Class<?> entity) {
-        return null;
+    private static Entity buildUnNamedActor(Class<?> stateType, StatefulActor actor, UnNamedActorBehavior behavior) {
+        String actorName = behavior.getName();
+        ActorKind kind = behavior.getActorType();
+        String channel = behavior.getChannel();
+        long deactivateTimeout = behavior.getDeactivatedTimeout();
+        long snapshotTimeout = behavior.getSnapshotTimeout();
+
+        final Map<String, Entity.EntityMethod> actions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.NORMAL_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    ActionEnvelope envelope = entry.getValue();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.DIRECT, 0, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        final Map<String, Entity.EntityMethod> timerActions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.TIMER_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    int timer = entry.getValue().getConfig().getTimer();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.TIMER, timer, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Entity entityType = new Entity(
+                actorName,
+                actor.getClass(),
+                getKind(kind),
+                actor.getStateType(),
+                actorName,
+                actor.isStateful(),
+                deactivateTimeout,
+                snapshotTimeout,
+                actions,
+                timerActions,
+                0,
+                0,
+                channel,
+                Optional.empty(),
+                Optional.empty());
+
+        return entityType;
     }
+
+    private static Entity buildUnNamedActor(Class<?> stateType, StatelessActor actor, UnNamedActorBehavior behavior) {
+        String actorName = behavior.getName();
+        ActorKind kind = behavior.getActorType();
+        String channel = behavior.getChannel();
+        long deactivateTimeout = behavior.getDeactivatedTimeout();
+        long snapshotTimeout = behavior.getSnapshotTimeout();
+
+        final Map<String, Entity.EntityMethod> actions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.NORMAL_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    ActionEnvelope envelope = entry.getValue();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.DIRECT, 0, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        final Map<String, Entity.EntityMethod> timerActions = behavior.getActions()
+                .entrySet()
+                .stream().filter(entry -> entry.getValue().getConfig().getKind().equals(ActionKind.TIMER_DISPATCH))
+                .map(entry -> {
+                    String actionName = entry.getKey();
+                    int timer = entry.getValue().getConfig().getTimer();
+
+                    return new AbstractMap.SimpleEntry<>(actionName, new Entity.EntityMethod(actionName, EntityMethodType.TIMER, timer, null, null, null));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Entity entityType = new Entity(
+                actorName,
+                actor.getClass(),
+                getKind(kind),
+                null,
+                actorName,
+                actor.isStateful(),
+                deactivateTimeout,
+                snapshotTimeout,
+                actions,
+                timerActions,
+                0,
+                0,
+                channel,
+                Optional.empty(),
+                Optional.empty());
+
+        return entityType;
+    }
+
+
 
     public static Entity fromAnnotationToEntity(Class<?> entity, StatefulNamedActor actor, Object arg, ActorFactory factory) {
         String actorBeanName = entity.getSimpleName();
@@ -597,13 +659,169 @@ public final class Entity {
     private static ActorOuterClass.Kind getKind(ActorKind kind) {
         switch (kind) {
             case UNNAMED:
-                return ActorOuterClass.Kind.UNAMED;
+                return ActorOuterClass.Kind.UNNAMED;
             case POOLED:
                 return ActorOuterClass.Kind.POOLED;
             case PROXY:
                 return ActorOuterClass.Kind.PROXY;
             default:
                 return ActorOuterClass.Kind.NAMED;
+        }
+    }
+
+    public String getActorName() {
+        return actorName;
+    }
+
+    public void setActorName(String actorName) {
+        this.actorName = actorName;
+    }
+
+    public Class<?> getActorType() {
+        return actorType;
+    }
+
+    public ActorOuterClass.Kind getKind() {
+        return kind;
+    }
+
+    public Class getStateType() {
+        return stateType;
+    }
+
+    public String getActorBeanName() {
+        return actorBeanName;
+    }
+
+    public boolean isStateful() {
+        return stateful;
+    }
+
+    public long getDeactivateTimeout() {
+        return deactivateTimeout;
+    }
+
+    public long getSnapshotTimeout() {
+        return snapshotTimeout;
+    }
+
+    public Map<String, EntityMethod> getActions() {
+        return actions;
+    }
+
+    public Map<String, EntityMethod> getTimerActions() {
+        return timerActions;
+    }
+
+    public int getMinPoolSize() {
+        return minPoolSize;
+    }
+
+    public int getMaxPoolSize() {
+        return maxPoolSize;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public Optional<Object> getActorArg() {
+        return actorArg;
+    }
+
+    public Optional<ActorFactory> getActorFactory() {
+        return actorFactory;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Entity{");
+        sb.append("actorName='").append(actorName).append('\'');
+        sb.append(", actorType=").append(actorType);
+        sb.append(", kind=").append(kind);
+        sb.append(", stateType=").append(stateType);
+        sb.append(", actorBeanName='").append(actorBeanName).append('\'');
+        sb.append(", stateful=").append(stateful);
+        sb.append(", deactivateTimeout=").append(deactivateTimeout);
+        sb.append(", snapshotTimeout=").append(snapshotTimeout);
+        sb.append(", actions=").append(actions);
+        sb.append(", timerActions=").append(timerActions);
+        sb.append(", minPoolSize=").append(minPoolSize);
+        sb.append(", maxPoolSize=").append(maxPoolSize);
+        sb.append(", channel=").append(channel);
+        sb.append('}');
+        return sb.toString();
+    }
+
+    public enum EntityMethodType {
+        DIRECT, TIMER
+    }
+
+    public static final class EntityMethod {
+        private String name;
+
+        private EntityMethodType type;
+
+        private int fixedPeriod;
+
+        private Method method;
+        private Class<?> inputType;
+        private Class<?> outputType;
+
+        public EntityMethod(
+                String name, EntityMethodType type, int fixedPeriod, Method method, Class<?> inputType, Class<?> outputType) {
+            this.name = name;
+            this.type = type;
+            this.fixedPeriod = fixedPeriod;
+            this.method = method;
+            this.inputType = inputType;
+            this.outputType = outputType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public EntityMethodType getType() {
+            return type;
+        }
+
+        public int getFixedPeriod() {
+            return fixedPeriod;
+        }
+
+        public Method getMethod() {
+            return method;
+        }
+
+        public Class getInputType() {
+            int arity = method.getParameterTypes().length;
+
+            if (arity == 2 && Objects.isNull(inputType)) {
+                for (Class<?> parameterType : method.getParameterTypes()) {
+                    if (!inputType.isAssignableFrom(ActorContext.class)) {
+                        return parameterType;
+                    }
+                }
+            }
+            return inputType;
+        }
+
+        public Class<?> getOutputType() {
+            return outputType;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("EntityMethod{");
+            sb.append("name='").append(name).append('\'');
+            sb.append(", type=").append(type);
+            sb.append(", fixedPeriod=").append(fixedPeriod);
+            sb.append(", method=").append(method);
+            sb.append(", inputType=").append(inputType);
+            sb.append(", outputType=").append(outputType);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }

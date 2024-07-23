@@ -3,6 +3,7 @@ package io.eigr.spawn.api.actors.workflows;
 import com.google.protobuf.Any;
 import com.google.protobuf.GeneratedMessage;
 import io.eigr.functions.protocol.Protocol;
+import io.eigr.functions.protocol.actors.ActorOuterClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -44,8 +45,9 @@ public final class Broadcast<T extends GeneratedMessage> {
 
     public Protocol.Broadcast build() {
         Protocol.Broadcast.Builder builder = Protocol.Broadcast.newBuilder();
+        //TODO use Channel object instead of string
         if (this.action.isPresent()) {
-            builder.setActionName(this.action.get());
+            builder.setChannelGroup(this.action.get());
         }
 
         if (this.channel.isPresent()) {

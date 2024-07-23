@@ -9,7 +9,7 @@ public final class UnNamedActorBehavior extends ActorBehavior {
     }
 
     @Override
-    protected ActorKind getActorType() {
+    public ActorKind getActorType() {
         return ActorKind.UNNAMED;
     }
 }
