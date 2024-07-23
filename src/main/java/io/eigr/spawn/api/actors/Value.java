@@ -1,6 +1,6 @@
 package io.eigr.spawn.api.actors;
 
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.GeneratedMessage;
 import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
@@ -57,11 +57,11 @@ public final class Value {
         return new Value();
     }
 
-    public <R extends GeneratedMessageV3> R getResponse() {
+    public <R extends GeneratedMessage> R getResponse() {
         return (R) response;
     }
 
-    public <S extends GeneratedMessageV3> S getState() {
+    public <S extends GeneratedMessage> S getState() {
         return (S) state;
     }
 
@@ -89,17 +89,17 @@ public final class Value {
         return type;
     }
 
-    public <R extends GeneratedMessageV3> Value response(R value) {
+    public <R extends GeneratedMessage> Value response(R value) {
         this.response = value;
         return this;
     }
 
-    public <S extends GeneratedMessageV3> Value state(S state) {
+    public <S extends GeneratedMessage> Value state(S state) {
         this.state = state;
         return this;
     }
 
-    public <S extends GeneratedMessageV3> Value state(S state, boolean checkpoint) {
+    public <S extends GeneratedMessage> Value state(S state, boolean checkpoint) {
         this.state = state;
         this.checkpoint = checkpoint;
         return this;

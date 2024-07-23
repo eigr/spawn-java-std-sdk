@@ -1,14 +1,14 @@
 package io.eigr.spawn.api.actors.workflows;
 
 import com.google.protobuf.Any;
-import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.GeneratedMessage;
 import io.eigr.functions.protocol.Protocol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.Optional;
 
-public final class Broadcast<T extends GeneratedMessageV3> {
+public final class Broadcast<T extends GeneratedMessage> {
 
     private final Optional<String> channel;
     private final Optional<String> action;
@@ -21,12 +21,12 @@ public final class Broadcast<T extends GeneratedMessageV3> {
     }
 
     @NotNull
-    public static <T extends GeneratedMessageV3> Broadcast to(String channel, String action, T payload) {
+    public static <T extends GeneratedMessage> Broadcast to(String channel, String action, T payload) {
         return new Broadcast<T>(Optional.of(channel), Optional.of(action), payload);
     }
 
     @NotNull
-    public static <T extends GeneratedMessageV3> Broadcast to(String channel, T payload) {
+    public static <T extends GeneratedMessage> Broadcast to(String channel, T payload) {
         return new Broadcast<T>(Optional.ofNullable(channel), Optional.empty(), payload);
     }
 
