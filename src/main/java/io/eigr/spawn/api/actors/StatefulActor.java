@@ -1,15 +1,16 @@
 package io.eigr.spawn.api.actors;
 
-import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
-
 import java.lang.reflect.ParameterizedType;
 
-public abstract class StatefulActor<S> {
+public abstract class StatefulActor<S> extends BaseActor {
     public Class<S> getStateType() {
         return (Class<S>) ((ParameterizedType)
                 getClass().getGenericSuperclass())
                 .getActualTypeArguments()[0];
     }
 
-    public abstract ActorBehavior configure();
+    @Override
+    public Boolean isStateful() {
+        return true;
+    }
 }

@@ -3,6 +3,7 @@ package io.eigr.spawn.internal;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.ActorFactory;
+import io.eigr.spawn.api.actors.StatefulActor;
 import io.eigr.spawn.api.actors.annotations.*;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateful.StatefulPooledActor;
@@ -10,6 +11,7 @@ import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
 import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ public final class Entity {
         this.actorArg = actorArg;
         this.actorFactory = actorFactory;
     }
+
 
 
 
@@ -232,6 +235,14 @@ public final class Entity {
         sb.append(", channel=").append(channel);
         sb.append('}');
         return sb.toString();
+    }
+
+    public static Entity fromStatefulActorToEntity(BehaviorCtx ctx, Class<?> entity) {
+        return null;
+    }
+
+    public static Entity fromStatelessActorToEntity(BehaviorCtx ctx, Class<?> entity) {
+        return null;
     }
 
     public static Entity fromAnnotationToEntity(Class<?> entity, StatefulNamedActor actor, Object arg, ActorFactory factory) {

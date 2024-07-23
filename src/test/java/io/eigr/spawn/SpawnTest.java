@@ -29,9 +29,9 @@ public class SpawnTest {
         injector.bind(String.class, "Hello with Constructor");
 
         spawnSystem = new Spawn.SpawnSystem()
-                .create("spawn-system")
+                .create("spawn-system", injector)
                 .withActor(JoeActor.class)
-                .withActor(ActorWithConstructor.class, injector, arg -> new ActorWithConstructor((DependencyInjector) arg))
+                .withActor(ActorWithConstructor.class)
                 .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)

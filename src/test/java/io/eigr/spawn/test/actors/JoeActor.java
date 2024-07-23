@@ -1,29 +1,39 @@
 package io.eigr.spawn.test.actors;
 
-import io.eigr.spawn.api.actors.Value;
-import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.actors.workflows.SideEffect;
-import io.eigr.spawn.java.test.domain.Actor;
+import io.eigr.spawn.api.actors.*;
 
-@StatefulNamedActor(name = "test_joe", stateType = Actor.State.class, channel = "test.channel")
-public final class JoeActor {
-    @Action(inputType = Actor.Request.class)
-    public Value setLanguage(Actor.Request msg, ActorContext<Actor.State> context) {
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.java.test.domain.Actor.*;
+
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
+
+public final class JoeActor extends StatefulActor<State> {
+
+    @Override
+    public ActorBehavior configure(BehaviorCtx context) {
+        return new NamedActorBehavior(
+                name("test_joe"),
+                channel("test.channel"),
+                action("SetLanguage", this::setLanguage)
+        );
+    }
+
+    public Value setLanguage(ActorContext<State> context, Request msg) {
         if (context.getState().isPresent()) {
         }
 
         return Value.at()
-                .response(Actor.Reply.newBuilder()
+                .response(Reply.newBuilder()
                         .setResponse("Hello From Java")
                         .build())
                 .state(updateState("java"))
                 .reply();
     }
 
-    private Actor.State updateState(String language) {
-        return Actor.State.newBuilder()
+    private State updateState(String language) {
+        return State.newBuilder()
                 .addLanguages(language)
                 .build();
     }

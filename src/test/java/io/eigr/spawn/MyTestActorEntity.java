@@ -3,6 +3,7 @@ package io.eigr.spawn;
 import io.eigr.spawn.api.actors.*;
 
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
 import io.eigr.spawn.java.test.domain.Actor.*;
 
@@ -13,19 +14,16 @@ import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 public class MyTestActorEntity extends StatefulActor<State> {
 
     @Override
-    public ActorBehavior configure() {
+    public ActorBehavior configure(BehaviorCtx context) {
         return new NamedActorBehavior(
                 name("test"),
                 deactivated(30000),
                 snapshot(10000),
                 init(this::handleInit),
-                action("Hi", ctx -> Value.at().noReply()),
+                action("Hi", actorCtx -> Value.at().noReply()),
                 action("SayHello", this::sayHello),
-                action("SayHelloTwo", (ctx, arg) -> Value.at().noReply())
+                action("SayHelloTwo", (actorCtx, arg) -> Value.at().noReply())
         );
-    }
-    public Value sayHello(ActorContext<State> ctx, Request req) {
-        return Value.at().response(Request.newBuilder().setLanguage("Java").build()).reply();
     }
 
     private Value handleInit(ActorContext ctx) {
@@ -39,5 +37,9 @@ public class MyTestActorEntity extends StatefulActor<State> {
         return Value.at()
                 .state(State.newBuilder().addLanguages("Java").build())
                 .noReply();
+    }
+
+    public Value sayHello(ActorContext<State> ctx, Request req) {
+        return Value.at().response(Request.newBuilder().setLanguage("Java").build()).reply();
     }
 }

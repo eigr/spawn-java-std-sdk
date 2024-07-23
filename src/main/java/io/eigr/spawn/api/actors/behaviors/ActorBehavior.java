@@ -1,7 +1,6 @@
 package io.eigr.spawn.api.actors.behaviors;
 
 import com.google.protobuf.GeneratedMessageV3;
-import com.google.protobuf.MessageOrBuilder;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.exceptions.ActorNotFoundException;
@@ -88,11 +87,11 @@ public abstract class ActorBehavior {
         return instance -> instance.actions.put(name, action);
     }
 
-    public static <T extends MessageOrBuilder> ActorOption action(String name, ActionArgumentFunction<T> action) {
+    public static <T extends GeneratedMessageV3> ActorOption action(String name, ActionArgumentFunction<T> action) {
         return instance -> instance.actions.put(name, action);
     }
 
-    public <A extends MessageOrBuilder> Value call(String action, ActorContext context) throws ActorNotFoundException {
+    public <A extends GeneratedMessageV3> Value call(String action, ActorContext context) throws ActorNotFoundException {
         if (this.actions.containsKey(action)) {
             ((ActionNoArgumentFunction) this.actions.get(action)).handle(context);
         }
@@ -101,7 +100,7 @@ public abstract class ActorBehavior {
                 String.format("Action [%s] not found for Actor [%s]", action, name));
     }
 
-    public <A extends MessageOrBuilder> Value call(String action, ActorContext context, A argument) throws ActorNotFoundException {
+    public <A extends GeneratedMessageV3> Value call(String action, ActorContext context, A argument) throws ActorNotFoundException {
         if (this.actions.containsKey(action)) {
             ((ActionArgumentFunction<A>) this.actions.get(action)).handle(context, argument);
         }
