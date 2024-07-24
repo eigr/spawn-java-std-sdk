@@ -1,11 +1,13 @@
 package io.eigr.spawn.api.actors.behaviors;
 
 import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.Message;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.Value;
-import io.eigr.spawn.api.exceptions.ActorNotFoundException;
+import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.internal.*;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +24,10 @@ public abstract class ActorBehavior {
     private final Map<String, ActionEnvelope> actions = new HashMap<>();
 
     public ActorBehavior(ActorOption... options) {
-        Optional.ofNullable(options).map(Stream::of).orElseGet(Stream::empty).forEach(option -> option.accept(this));
+        Optional.ofNullable(options)
+                .stream()
+                .flatMap(Stream::of)
+                .forEach(option -> option.accept(this));
     }
 
     public static ActorOption name(String actorName) {
@@ -41,24 +46,57 @@ public abstract class ActorBehavior {
         return instance -> instance.snapshotTimeout = timeout;
     }
 
-    public static ActorOption init(ActionNoArgumentFunction action) {
-        return instance -> instance.actions.put("Init", new ActionEnvelope(action, new ActionConfiguration(ActionKind.NORMAL_DISPATCH)));
+    public static ActorOption init(ActionNoBindings action) {
+        return instance -> instance.actions.put(
+                "Init",
+                new ActionEnvelope(
+                        action,
+                        new ActionConfiguration(ActionKind.NORMAL_DISPATCH, 0, null, null)));
     }
 
-    public static ActorOption action(String name, ActionNoArgumentFunction action) {
-        return instance -> instance.actions.put(name, new ActionEnvelope(action, new ActionConfiguration(ActionKind.NORMAL_DISPATCH)));
+    public static ActorOption action(String name, ActionNoBindings action) {
+        final Method method = action.getClass().getDeclaredMethods()[0];
+        final Class<?> outputType = method.getReturnType();
+        return instance -> instance.actions.put(
+                name,
+                new ActionEnvelope(
+                        action,
+                        new ActionConfiguration(ActionKind.NORMAL_DISPATCH, 0, null, outputType)));
     }
 
-    public static <T extends GeneratedMessage> ActorOption action(String name, ActionArgumentFunction<T> action) {
-        return instance -> instance.actions.put(name, new ActionEnvelope(action, new ActionConfiguration(ActionKind.NORMAL_DISPATCH)));
+    public static <T extends Message> ActorOption action(String name, ActionBindings<T> action) {
+        final Method method = action.getClass().getDeclaredMethods()[0];
+
+        final Class<?> inputType = action.getArgumentType();
+        final Class<?> outputType = Value.class;
+
+        return instance -> instance.actions.put(
+                name,
+                new ActionEnvelope(
+                        action,
+                        new ActionConfiguration(ActionKind.NORMAL_DISPATCH, 1, inputType, outputType)));
     }
 
-    public static ActorOption timerAction(String name, int timer, ActionNoArgumentFunction action) {
-        return instance -> instance.actions.put(name, new ActionEnvelope(action, new ActionConfiguration(ActionKind.TIMER_DISPATCH, timer)));
+    public static ActorOption timerAction(String name, int timer, ActionNoBindings action) {
+        final Method method = action.getClass().getDeclaredMethods()[0];
+        final Class<?> outputType = method.getReturnType();
+
+        return instance -> instance.actions.put(
+                name, new ActionEnvelope(
+                        action,
+                        new ActionConfiguration(ActionKind.TIMER_DISPATCH, timer, 0, null, outputType)));
     }
 
-    public static <T extends GeneratedMessage> ActorOption timerAction(String name, int timer, ActionArgumentFunction<T> action) {
-        return instance -> instance.actions.put(name, new ActionEnvelope(action, new ActionConfiguration(ActionKind.TIMER_DISPATCH, timer)));
+    public static <T extends GeneratedMessage> ActorOption timerAction(String name, int timer, ActionBindings<T> action) {
+        final Method method = action.getClass().getDeclaredMethods()[0];
+        final Class<?> inputType = method.getParameterTypes()[1];
+        final Class<?> outputType = method.getReturnType();
+
+        return instance -> instance.actions.put(
+                name,
+                new ActionEnvelope(
+                        action,
+                        new ActionConfiguration(ActionKind.TIMER_DISPATCH, timer, 1, inputType, outputType)));
     }
 
     public abstract ActorKind getActorType();
@@ -91,23 +129,22 @@ public abstract class ActorBehavior {
         return actions;
     }
 
-    public <A extends GeneratedMessage> Value call(String action, ActorContext context) throws ActorNotFoundException {
+    public Value call(String action, ActorContext context) throws ActorInvocationException {
         if (this.actions.containsKey(action)) {
-            ((ActionNoArgumentFunction) this.actions.get(action).getFunction()).handle(context);
+            return ((ActionNoBindings) this.actions.get(action).getFunction()).handle(context);
         }
 
-        throw new ActorNotFoundException(String.format("Action [%s] not found for Actor [%s]", action, name));
+        throw new ActorInvocationException(String.format("Action [%s] not found for Actor [%s]", action, name));
     }
 
-    public <A extends GeneratedMessage> Value call(String action, ActorContext context, A argument) throws ActorNotFoundException {
+    public <A extends Message> Value call(String action, ActorContext context, A argument) throws ActorInvocationException {
         if (this.actions.containsKey(action)) {
-            ((ActionArgumentFunction<A>) this.actions.get(action).getFunction()).handle(context, argument);
+            return ((ActionBindings<A>) this.actions.get(action).getFunction()).handle(context, argument);
         }
 
-        throw new ActorNotFoundException(String.format("Action [%s] not found for Actor [%s]", action, name));
+        throw new ActorInvocationException(String.format("Action [%s] not found for Actor [%s]", action, name));
     }
 
     public interface ActorOption extends Consumer<ActorBehavior> {
     }
-
 }

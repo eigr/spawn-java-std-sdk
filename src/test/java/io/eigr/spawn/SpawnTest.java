@@ -31,7 +31,7 @@ public class SpawnTest {
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system", injector)
                 .withActor(JoeActor.class)
-                //.withActor(ActorWithConstructor.class)
+                .withActor(ActorWithConstructor.class)
                 .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)
@@ -47,12 +47,12 @@ public class SpawnTest {
     @Test
     public void testApp() throws ActorCreationException, ActorInvocationException {
         ActorRef joeActor = spawnSystem.createActorRef(
-                ActorIdentity.of("spawn-system", "test_joe"));
+                ActorIdentity.of("spawn-system", "JoeActor"));
 
         assertNotNull(joeActor);
 
         Actor.Request msg = Actor.Request.newBuilder()
-                .setLanguage("erlang")
+                .setLanguage("Erlang")
                 .build();
 
         Optional<Actor.Reply> maybeReply =
@@ -61,7 +61,7 @@ public class SpawnTest {
         if (maybeReply.isPresent()) {
             Actor.Reply reply = maybeReply.get();
             assertNotNull(reply);
-            assertEquals("Hello From Java", reply.getResponse());
+            assertEquals("Hi Erlang. Hello From Java", reply.getResponse());
         }
     }
 }

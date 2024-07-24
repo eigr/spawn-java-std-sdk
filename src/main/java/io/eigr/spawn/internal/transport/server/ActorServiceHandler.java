@@ -10,8 +10,9 @@ import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass.ActorId;
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.ActorFactory;
+import io.eigr.spawn.api.actors.StatefulActor;
 import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.internal.Entity;
@@ -23,14 +24,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public final class ActorServiceHandler implements HttpHandler {
+public final class ActorServiceHandler<B extends ActorBehavior> implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(ActorServiceHandler.class);
     private static final int CACHE_MAXIMUM_SIZE = 10_000;
     private static final int CACHE_EXPIRE_AFTER_WRITE_SECONDS = 60;
@@ -41,7 +41,7 @@ public final class ActorServiceHandler implements HttpHandler {
 
     private final List<Entity> entities;
 
-    private final Cache<String, Object> cache;
+    private final Cache<String, B> cache;
 
 
     public ActorServiceHandler(final Spawn spawn, final List<Entity> actors) {
@@ -113,6 +113,7 @@ public final class ActorServiceHandler implements HttpHandler {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Error during handle request.", e);
         }
 
@@ -126,24 +127,23 @@ public final class ActorServiceHandler implements HttpHandler {
 
             try {
                 String actorKey = String.format("%s:%s", system, actor);
-                Object actorRef = this.cache.getIfPresent(actorKey);
+                ActorBehavior actorRef = this.cache.getIfPresent(actorKey);
                 if (Objects.isNull(actorRef)) {
                     actorRef = buildInstance(entity);
-                    this.cache.put(actorKey, actorRef);
+                    this.cache.put(actorKey, (B) actorRef);
                 }
 
                 Entity.EntityMethod entityMethod;
 
                 if (entity.getActions().containsKey(commandName)) {
-                    entityMethod = entity.getActions().get(commandName);
+                    entityMethod = (Entity.EntityMethod) entity.getActions().get(commandName);
                 } else if (entity.getTimerActions().containsKey(commandName)) {
-                    entityMethod = entity.getTimerActions().get(commandName);
+                    entityMethod = (Entity.EntityMethod) entity.getTimerActions().get(commandName);
                 } else {
                     throw new ActorInvocationException(
                             String.format("The Actor does not have the desired action: %s", commandName));
                 }
 
-                final Method actorMethod = entityMethod.getMethod();
                 Class inputType = entityMethod.getInputType();
                 log.debug("Action input type is: {}. Deserialize with value {}", inputType, value.getTypeUrl());
 
@@ -159,11 +159,11 @@ public final class ActorServiceHandler implements HttpHandler {
                     actorContext = new ActorContext(this.spawn);
                 }
 
-                if (inputType.isAssignableFrom(ActorContext.class) && actorMethod.getParameterTypes().length == 1) {
-                    return Optional.of((Value) actorMethod.invoke(actorRef, actorContext));
+                if (entityMethod.getArity() == 0) {
+                    return Optional.of((Value) actorRef.call(commandName, actorContext));
                 } else {
-                    final Object unpack = value.unpack(inputType);
-                    return Optional.of((Value) actorMethod.invoke(actorRef, unpack, actorContext));
+                    final var unpack = value.unpack(inputType);
+                    return Optional.of((Value) actorRef.call(commandName, actorContext, unpack));
                 }
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 throw new ActorInvocationException(e);
@@ -177,20 +177,21 @@ public final class ActorServiceHandler implements HttpHandler {
         return Optional.empty();
     }
 
-    private Object buildInstance(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private <B extends ActorBehavior> B buildInstance(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         return buildInstanceByArg(entity);
     }
 
-    private Object buildInstanceByArg(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        if (entity.getActorFactory().isPresent() && entity.getActorArg().isPresent()) {
-            ActorFactory factory = entity.getActorFactory().get();
-            Object arg = entity.getActorArg().get();
-            return factory.newInstance(arg);
+    private <B extends ActorBehavior> B buildInstanceByArg(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+
+        ActorBehavior behavior = entity.getBehavior();
+        if (Objects.nonNull(behavior)) {
+            return (B) behavior;
         }
 
-        Class<?> klass = entity.getActorType();
-        Constructor<?> constructor = klass.getConstructor();
-        return constructor.newInstance();
+        Constructor<?> constructor = entity.getActor().getClass().getConstructor();
+        StatefulActor stActor = (StatefulActor) constructor.newInstance();
+        stActor.configure(entity.getCtx());
+        return (B) stActor.configure(entity.getCtx());
     }
 
     private Optional<Entity> getEntityByActor(String actor, String parent) {

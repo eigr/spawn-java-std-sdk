@@ -6,9 +6,7 @@ import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
-
-import io.eigr.spawn.api.extensions.DependencyInjector;
-
+import io.eigr.spawn.internal.ActionBindings;
 import io.eigr.spawn.java.test.domain.Actor.Reply;
 import io.eigr.spawn.java.test.domain.Actor.Request;
 import io.eigr.spawn.java.test.domain.Actor.State;
@@ -23,12 +21,12 @@ public final class ActorWithConstructor extends StatefulActor<State> {
     public ActorBehavior configure(BehaviorCtx context) {
         defaultMessage = context.getInjector().getInstance(String.class);
         return new NamedActorBehavior(
-                name("test_actor_constructor"),
-                action("SetLanguage", this::setLanguage)
+                name("TestActorConstructor"),
+                action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
         );
     }
 
-    public Value setLanguage(ActorContext<State> context, Request msg) {
+    private Value setLanguage(ActorContext<State> context, Request msg) {
         return Value.at()
                 .response(Reply.newBuilder()
                         .setResponse(defaultMessage)

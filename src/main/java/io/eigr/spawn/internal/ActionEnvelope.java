@@ -2,17 +2,17 @@ package io.eigr.spawn.internal;
 
 import java.util.StringJoiner;
 
-public final class ActionEnvelope {
+public final class ActionEnvelope<F extends ActionEmptyFunction> {
 
-    private final ActionEmptyFunction function;
+    private final F function;
     private final ActionConfiguration config;
 
-    public ActionEnvelope(ActionEmptyFunction function, ActionConfiguration config) {
+    public ActionEnvelope(F function, ActionConfiguration config) {
         this.function = function;
         this.config = config;
     }
 
-    public ActionEmptyFunction getFunction() {
+    public F getFunction() {
         return function;
     }
 

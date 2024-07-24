@@ -5,16 +5,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.sun.net.httpserver.HttpServer;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.functions.protocol.actors.ActorOuterClass;
-import io.eigr.spawn.api.actors.ActorFactory;
 import io.eigr.spawn.api.actors.BaseActor;
 import io.eigr.spawn.api.actors.StatefulActor;
 import io.eigr.spawn.api.actors.StatelessActor;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulPooledActor;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulUnNamedActor;
-import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
-import io.eigr.spawn.api.actors.annotations.stateless.StatelessPooledActor;
-import io.eigr.spawn.api.actors.annotations.stateless.StatelessUnNamedActor;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorRegistrationException;
@@ -199,14 +192,11 @@ public final class Spawn {
                 .build();
 
         log.debug("Registering Actors on Proxy. Registry: {}", req);
-        System.out.println(String.format("Registering Actors on Proxy. Registry: %s", req));
         this.client.register(req);
     }
 
     private Map<String, ActorOuterClass.Actor> getActors(List<Entity> entities) {
-        System.out.println(String.format("Entities %s", entities.size()));
         return entities.stream().map(actorEntity -> {
-            System.out.println(String.format("Register Actor Entity %s", actorEntity.getActorName()));
             ActorOuterClass.ActorSnapshotStrategy snapshotStrategy;
             if (actorEntity.isStateful()) {
                 snapshotStrategy = ActorOuterClass.ActorSnapshotStrategy.newBuilder()
@@ -234,13 +224,17 @@ public final class Spawn {
                     .setMaxPoolSize(actorEntity.getMaxPoolSize())
                     .build();
 
-            Map<String, String> tags = new HashMap<>();
-            ActorOuterClass.Metadata metadata = ActorOuterClass.Metadata.newBuilder()
-                    .addChannelGroup(
-                            ActorOuterClass.Channel.newBuilder()
-                                    .setTopic(actorEntity.getChannel())
-                                    .build())
-                    .build();
+            final Map<String, String> tags = new HashMap<>();
+            final ActorOuterClass.Metadata.Builder metadataBuilder = ActorOuterClass.Metadata.newBuilder();
+
+            if (Objects.nonNull(actorEntity.getChannel())){
+                metadataBuilder.addChannelGroup(ActorOuterClass.Channel.newBuilder()
+                        .setTopic(actorEntity.getChannel())
+                        .build());
+            }
+
+            metadataBuilder.putAllTags(tags);
+            final ActorOuterClass.Metadata metadata = metadataBuilder.build();
 
             return ActorOuterClass.Actor.newBuilder()
                     .setId(ActorOuterClass.ActorId.newBuilder()
@@ -258,19 +252,23 @@ public final class Spawn {
     }
 
     private List<ActorOuterClass.Action> getActions(Entity actorEntity) {
-        return actorEntity.getActions().values().stream()
-                .filter(v -> Entity.EntityMethodType.DIRECT.equals(v.getType()))
-                .map(action -> ActorOuterClass.Action.newBuilder().setName(action.getName()).build())
+        return (List<ActorOuterClass.Action>) actorEntity.getActions().values().stream()
+                .filter(v -> Entity.EntityMethodType.DIRECT.equals(((Entity.EntityMethod)v).getType()))
+                .map(action -> ActorOuterClass.Action.newBuilder()
+                        .setName(((Entity.EntityMethod)action).getName())
+                        .build()
+                )
                 .collect(Collectors.toList());
     }
 
     private List<ActorOuterClass.FixedTimerAction> getTimerActions(Entity actorEntity) {
-        List<ActorOuterClass.FixedTimerAction> timerActions = actorEntity.getTimerActions().values()
-                .stream().filter(v -> Entity.EntityMethodType.TIMER.equals(v.getType()))
+        List<ActorOuterClass.FixedTimerAction> timerActions =
+                (List<ActorOuterClass.FixedTimerAction>) actorEntity.getTimerActions().values()
+                .stream().filter(v -> Entity.EntityMethodType.TIMER.equals(((Entity.EntityMethod)v).getType()))
                 .map(action -> ActorOuterClass.FixedTimerAction.newBuilder()
                         .setAction(ActorOuterClass.Action.newBuilder()
-                                .setName(action.getName()).build())
-                        .setSeconds(action.getFixedPeriod()).build())
+                                .setName(((Entity.EntityMethod)action).getName()).build())
+                        .setSeconds(((Entity.EntityMethod)action).getFixedPeriod()).build())
                 .collect(Collectors.toList());
 
         log.debug("Actor have TimeActions: {}", timerActions);
@@ -391,18 +389,14 @@ public final class Spawn {
         }
 
         private Optional<Entity> mapEntity(Class<?> actorKlass) throws ActorCreationException {
-            System.out.println(String.format("Klass %s", actorKlass.getSuperclass()));
             if (StatefulActor.class.isAssignableFrom(actorKlass)) {
-                System.out.println("StatefulActor");
                 return Optional.of(Entity.fromStatefulActorToEntity(ctx, actorKlass));
             }
 
             if (StatelessActor.class.isAssignableFrom(actorKlass)) {
-                System.out.println("StatelessActor");
                 return Optional.of(Entity.fromStatelessActorToEntity(ctx, actorKlass));
             }
 
-            System.out.println("empty");
             return Optional.empty();
         }
     }
