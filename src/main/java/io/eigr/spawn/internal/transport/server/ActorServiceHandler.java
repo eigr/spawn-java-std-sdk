@@ -3,6 +3,7 @@ package io.eigr.spawn.internal.transport.server;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.protobuf.Any;
+import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -23,10 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -38,16 +37,13 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
 
     private final Spawn spawn;
     private final String system;
-
     private final List<Entity> entities;
-
     private final Cache<String, B> cache;
 
-
-    public ActorServiceHandler(final Spawn spawn, final List<Entity> actors) {
+    public ActorServiceHandler(final Spawn spawn, final List<Entity> entities) {
         this.spawn = spawn;
         this.system = spawn.getSystem();
-        this.entities = actors;
+        this.entities = entities;
         this.cache = Caffeine.newBuilder()
                 .maximumSize(CACHE_MAXIMUM_SIZE)
                 .expireAfterWrite(Duration.ofSeconds(CACHE_EXPIRE_AFTER_WRITE_SECONDS))
@@ -57,7 +53,6 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         log.debug("Received Actor Action Request.");
-
         if ("POST".equals(exchange.getRequestMethod())) {
             try (OutputStream os = exchange.getResponseBody()) {
                 Protocol.ActorInvocationResponse response = handleRequest(exchange);
@@ -87,34 +82,11 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
                     actor, commandName, maybeValueResponse);
 
             if (maybeValueResponse.isPresent()) {
-                Value valueResponse = maybeValueResponse.get();
-
-                Protocol.Context.Builder updatedContextBuilder = Protocol.Context.newBuilder();
-                if (Objects.nonNull(valueResponse.getState())) {
-                    Any encodedState = Any.pack(valueResponse.getState());
-                    updatedContextBuilder.setState(encodedState);
-                }
-
-                Any encodedValue;
-                if (Objects.isNull(valueResponse.getResponse())) {
-                    encodedValue = Any.pack(Protocol.Noop.getDefaultInstance());
-                } else {
-                    encodedValue = Any.pack(valueResponse.getResponse());
-                }
-
-                return Protocol.ActorInvocationResponse.newBuilder()
-                        .setActorName(actor)
-                        .setActorSystem(system)
-                        .setValue(encodedValue)
-                        .setWorkflow(buildWorkflow(valueResponse))
-                        .setUpdatedContext(updatedContextBuilder.build())
-                        .setCheckpoint(valueResponse.getCheckpoint())
-                        .build();
+                return buildResponse(maybeValueResponse.get(), actor, system);
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
             log.error("Error during handle request.", e);
+            throw new IOException("Action result is null", e);
         }
 
         throw new IOException("Action result is null");
@@ -124,88 +96,96 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         Optional<Entity> optionalEntity = getEntityByActor(actor, parent);
         if (optionalEntity.isPresent()) {
             Entity entity = optionalEntity.get();
-
             try {
-                String actorKey = String.format("%s:%s", system, actor);
-                ActorBehavior actorRef = this.cache.getIfPresent(actorKey);
-                if (Objects.isNull(actorRef)) {
-                    actorRef = buildInstance(entity);
-                    this.cache.put(actorKey, (B) actorRef);
-                }
+                ActorBehavior actorRef = getOrCreateActor(system, actor, entity);
+                Entity.EntityMethod entityMethod = getEntityMethod(commandName, entity);
+                ActorContext actorContext = createActorContext(context, entity);
 
-                Entity.EntityMethod entityMethod;
-
-                if (entity.getActions().containsKey(commandName)) {
-                    entityMethod = (Entity.EntityMethod) entity.getActions().get(commandName);
-                } else if (entity.getTimerActions().containsKey(commandName)) {
-                    entityMethod = (Entity.EntityMethod) entity.getTimerActions().get(commandName);
-                } else {
-                    throw new ActorInvocationException(
-                            String.format("The Actor does not have the desired action: %s", commandName));
-                }
-
-                Class inputType = entityMethod.getInputType();
-                log.debug("Action input type is: {}. Deserialize with value {}", inputType, value.getTypeUrl());
-
-                ActorContext actorContext;
-                if (context.hasState()) {
-                    Any anyCtxState = context.getState();
-                    log.debug("[{}] trying to get the state of the Actor {}. Parse Any type {} from State type {}",
-                            system, actor, anyCtxState, entity.getStateType().getSimpleName());
-
-                    Object state = anyCtxState.unpack(entity.getStateType());
-                    actorContext = new ActorContext(this.spawn, state);
-                } else {
-                    actorContext = new ActorContext(this.spawn);
-                }
-
-                if (entityMethod.getArity() == 0) {
-                    return Optional.of((Value) actorRef.call(commandName, actorContext));
-                } else {
-                    final var unpack = value.unpack(inputType);
-                    return Optional.of((Value) actorRef.call(commandName, actorContext, unpack));
-                }
-            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                throw new ActorInvocationException(e);
-            } catch (InvalidProtocolBufferException e) {
-                throw new ActorInvocationException(e);
-            } catch (NoSuchMethodException | InstantiationException e) {
+                return invokeAction(actorRef, commandName, value, entityMethod, actorContext);
+            } catch (ReflectiveOperationException | InvalidProtocolBufferException e) {
                 throw new ActorInvocationException(e);
             }
         }
-
         return Optional.empty();
     }
 
-    private <B extends ActorBehavior> B buildInstance(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        return buildInstanceByArg(entity);
+    private Optional<Value> invokeAction(ActorBehavior actorRef, String commandName, Any value, Entity.EntityMethod entityMethod, ActorContext actorContext) throws ReflectiveOperationException, InvalidProtocolBufferException, ActorInvocationException {
+        if (entityMethod.getArity() == 0) {
+            return Optional.of((Value) actorRef.call(commandName, actorContext));
+        } else {
+            Class inputType = entityMethod.getInputType();
+            final var unpackedValue = value.unpack(inputType);
+            return Optional.of((Value) actorRef.call(commandName, actorContext, unpackedValue));
+        }
     }
 
-    private <B extends ActorBehavior> B buildInstanceByArg(Entity entity) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-
-        ActorBehavior behavior = entity.getBehavior();
-        if (Objects.nonNull(behavior)) {
-            return (B) behavior;
+    private ActorBehavior getOrCreateActor(String system, String actor, Entity entity) throws ReflectiveOperationException {
+        String actorKey = String.format("%s:%s", system, actor);
+        ActorBehavior actorRef = cache.getIfPresent(actorKey);
+        if (actorRef == null) {
+            actorRef = buildInstance(entity);
+            cache.put(actorKey, (B) actorRef);
         }
+        return actorRef;
+    }
 
+    private Entity.EntityMethod getEntityMethod(String commandName, Entity entity) throws ActorInvocationException {
+        if (entity.getActions().containsKey(commandName)) {
+            return (Entity.EntityMethod) entity.getActions().get(commandName);
+        } else if (entity.getTimerActions().containsKey(commandName)) {
+            return (Entity.EntityMethod) entity.getTimerActions().get(commandName);
+        } else {
+            throw new ActorInvocationException(
+                    String.format("The Actor does not have the desired action: %s", commandName));
+        }
+    }
+
+    private ActorContext createActorContext(Protocol.Context context, Entity entity) throws InvalidProtocolBufferException {
+        if (context.hasState()) {
+            Any anyCtxState = context.getState();
+            log.debug("[{}] trying to get the state of the Actor {}. Parse Any type {} from State type {}",
+                    system, entity.getActorName(), anyCtxState, entity.getStateType().getSimpleName());
+
+            Object state = anyCtxState.unpack(entity.getStateType());
+            return new ActorContext(spawn, state);
+        } else {
+            return new ActorContext(spawn);
+        }
+    }
+
+    private <B extends ActorBehavior> B buildInstance(Entity entity) throws ReflectiveOperationException {
         Constructor<?> constructor = entity.getActor().getClass().getConstructor();
         StatefulActor stActor = (StatefulActor) constructor.newInstance();
-        stActor.configure(entity.getCtx());
         return (B) stActor.configure(entity.getCtx());
     }
 
     private Optional<Entity> getEntityByActor(String actor, String parent) {
-        Optional<Entity> entity = this.entities.stream()
+        return entities.stream()
                 .filter(e -> e.getActorName().equalsIgnoreCase(actor))
-                .findFirst();
+                .findFirst()
+                .or(() -> entities.stream()
+                        .filter(e -> e.getActorName().equalsIgnoreCase(parent))
+                        .findFirst());
+    }
 
-        if (entity.isPresent()) {
-            return entity;
-        }
+    private Protocol.ActorInvocationResponse buildResponse(Value valueResponse, String actor, String system) {
+        Protocol.Context.Builder updatedContextBuilder = Protocol.Context.newBuilder();
 
-        return this.entities.stream()
-                .filter(e -> e.getActorName().equalsIgnoreCase(parent))
-                .findFirst();
+        Optional.<GeneratedMessage>of(valueResponse.getState())
+                .ifPresent(state -> updatedContextBuilder.setState(Any.pack(state)));
+
+        Any encodedValue = Optional.<GeneratedMessage>of(valueResponse.getResponse())
+                .map(value -> Any.pack(value))
+                .orElse(Any.pack(Protocol.Noop.getDefaultInstance()));
+
+        return Protocol.ActorInvocationResponse.newBuilder()
+                .setActorName(actor)
+                .setActorSystem(system)
+                .setValue(encodedValue)
+                .setWorkflow(buildWorkflow(valueResponse))
+                .setUpdatedContext(updatedContextBuilder.build())
+                .setCheckpoint(valueResponse.getCheckpoint())
+                .build();
     }
 
     private Protocol.Workflow buildWorkflow(Value valueResponse) {
@@ -224,5 +204,4 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
                 .map(SideEffect::build)
                 .collect(Collectors.toList());
     }
-
 }

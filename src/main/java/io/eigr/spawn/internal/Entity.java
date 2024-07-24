@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -148,7 +147,7 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
                             new Entity.EntityMethod(
                                     actionName,
                                     EntityMethodType.DIRECT,
-                                    config.getArity(),
+                                    arity,
                                     timer,
                                     config.getInputType(),
                                     config.getOutputType()));
