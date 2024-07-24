@@ -26,9 +26,16 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Handles HTTP requests for actor actions in an actor-based system.
+ * Implements {@link HttpHandler} to process incoming HTTP POST requests and invoke actions on actors.
+ *
+ * @param <B> the type of {@link ActorBehavior} managed by this handler
+ */
 public final class ActorServiceHandler<B extends ActorBehavior> implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(ActorServiceHandler.class);
     private static final int CACHE_MAXIMUM_SIZE = 10_000;
@@ -40,6 +47,12 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
     private final List<Entity> entities;
     private final Cache<String, B> cache;
 
+    /**
+     * Constructs an {@link ActorServiceHandler} instance.
+     *
+     * @param spawn the {@link Spawn} instance representing the actor system
+     * @param entities the list of {@link Entity} objects representing the actors
+     */
     public ActorServiceHandler(final Spawn spawn, final List<Entity> entities) {
         this.spawn = spawn;
         this.system = spawn.getSystem();
@@ -50,6 +63,12 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
                 .build();
     }
 
+    /**
+     * Handles incoming HTTP requests.
+     *
+     * @param exchange the {@link HttpExchange} representing the HTTP request-response exchange
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         log.debug("Received Actor Action Request.");
@@ -64,6 +83,13 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         }
     }
 
+    /**
+     * Processes the actor invocation request and returns the response.
+     *
+     * @param exchange the {@link HttpExchange} representing the HTTP request-response exchange
+     * @return the {@link Protocol.ActorInvocationResponse} representing the response to the actor invocation
+     * @throws IOException if an I/O error occurs
+     */
     private Protocol.ActorInvocationResponse handleRequest(HttpExchange exchange) throws IOException {
         try (InputStream in = exchange.getRequestBody()) {
             Protocol.ActorInvocation actorInvocationRequest = Protocol.ActorInvocation.parseFrom(in);
@@ -92,7 +118,21 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         throw new IOException("Action result is null");
     }
 
-    private Optional<Value> callAction(String system, String actor, String parent, String commandName, Any value, Protocol.Context context) throws ActorInvocationException {
+    /**
+     * Invokes the specified action on the actor and returns the result.
+     *
+     * @param system the actor system name
+     * @param actor the actor name
+     * @param parent the parent actor name
+     * @param commandName the action name
+     * @param value the action input value
+     * @param context the actor context
+     * @return an {@link Optional} containing the result of the action invocation
+     * @throws ActorInvocationException if an error occurs during action invocation
+     */
+    private Optional<Value> callAction(
+            String system, String actor, String parent, String commandName, Any value, Protocol.Context context)
+            throws ActorInvocationException {
         Optional<Entity> optionalEntity = getEntityByActor(actor, parent);
         if (optionalEntity.isPresent()) {
             Entity entity = optionalEntity.get();
@@ -109,7 +149,9 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         return Optional.empty();
     }
 
-    private Optional<Value> invokeAction(ActorBehavior actorRef, String commandName, Any value, Entity.EntityMethod entityMethod, ActorContext actorContext) throws ReflectiveOperationException, InvalidProtocolBufferException, ActorInvocationException {
+    private Optional<Value> invokeAction(
+            ActorBehavior actorRef, String commandName, Any value, Entity.EntityMethod entityMethod, ActorContext actorContext)
+            throws ReflectiveOperationException, InvalidProtocolBufferException, ActorInvocationException {
         if (entityMethod.getArity() == 0) {
             return Optional.of((Value) actorRef.call(commandName, actorContext));
         } else {
@@ -119,16 +161,33 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         }
     }
 
+    /**
+     * Builds or retrieves an actor behavior instance from the cache.
+     *
+     * @param system the actor system name
+     * @param actor the actor name
+     * @param entity the {@link Entity} object representing the actor
+     * @return the {@link ActorBehavior} instance
+     * @throws ReflectiveOperationException if a reflection operation fails
+     */
     private ActorBehavior getOrCreateActor(String system, String actor, Entity entity) throws ReflectiveOperationException {
         String actorKey = String.format("%s:%s", system, actor);
         ActorBehavior actorRef = cache.getIfPresent(actorKey);
-        if (actorRef == null) {
+        if (Objects.isNull(actorRef)) {
             actorRef = buildInstance(entity);
             cache.put(actorKey, (B) actorRef);
         }
         return actorRef;
     }
 
+    /**
+     * Retrieves the method corresponding to the specified command name from the entity.
+     *
+     * @param commandName the action name
+     * @param entity the {@link Entity} object representing the actor
+     * @return the {@link Entity.EntityMethod} representing the method for the command
+     * @throws ActorInvocationException if the entity does not contain the desired action
+     */
     private Entity.EntityMethod getEntityMethod(String commandName, Entity entity) throws ActorInvocationException {
         if (entity.getActions().containsKey(commandName)) {
             return (Entity.EntityMethod) entity.getActions().get(commandName);
@@ -140,6 +199,14 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         }
     }
 
+    /**
+     * Creates an {@link ActorContext} instance using the provided context and entity state.
+     *
+     * @param context the {@link Protocol.Context} representing the actor context
+     * @param entity the {@link Entity} object representing the actor
+     * @return the {@link ActorContext} instance
+     * @throws InvalidProtocolBufferException if the state cannot be unpacked
+     */
     private ActorContext createActorContext(Protocol.Context context, Entity entity) throws InvalidProtocolBufferException {
         if (context.hasState()) {
             Any anyCtxState = context.getState();
@@ -153,12 +220,26 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         }
     }
 
+    /**
+     * Builds an {@link ActorBehavior} instance from the provided entity.
+     *
+     * @param entity the {@link Entity} object representing the actor
+     * @return the {@link ActorBehavior} instance
+     * @throws ReflectiveOperationException if a reflection operation fails
+     */
     private <B extends ActorBehavior> B buildInstance(Entity entity) throws ReflectiveOperationException {
         Constructor<?> constructor = entity.getActor().getClass().getConstructor();
         StatefulActor stActor = (StatefulActor) constructor.newInstance();
         return (B) stActor.configure(entity.getCtx());
     }
 
+    /**
+     * Retrieves an {@link Entity} based on the actor or parent actor name.
+     *
+     * @param actor the actor name
+     * @param parent the parent actor name
+     * @return an {@link Optional} containing the {@link Entity} if found
+     */
     private Optional<Entity> getEntityByActor(String actor, String parent) {
         return entities.stream()
                 .filter(e -> e.getActorName().equalsIgnoreCase(actor))
@@ -188,6 +269,12 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
                 .build();
     }
 
+    /**
+     * Builds a {@link Protocol.Workflow} from the provided value response.
+     *
+     * @param valueResponse the {@link Value} representing the response value
+     * @return the {@link Protocol.Workflow} instance
+     */
     private Protocol.Workflow buildWorkflow(Value valueResponse) {
         Protocol.Workflow.Builder workflowBuilder = Protocol.Workflow.newBuilder();
 
@@ -199,6 +286,12 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
         return workflowBuilder.build();
     }
 
+    /**
+     * Converts a list of {@link SideEffect} to a list of {@link Protocol.SideEffect}.
+     *
+     * @param effects the list of {@link SideEffect} objects
+     * @return the list of {@link Protocol.SideEffect} objects
+     */
     private List<Protocol.SideEffect> getProtocolEffects(List<SideEffect<?>> effects) {
         return effects.stream()
                 .map(SideEffect::build)
