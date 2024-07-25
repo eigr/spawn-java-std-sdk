@@ -31,7 +31,6 @@ abstract class AbstractContainerBaseTest {
         SPAWN_CONTAINER = new GenericContainer<>(DockerImageName.parse(spawnProxyImage))
                 .withCreateContainerCmdModifier(e -> e.withHostConfig(HostConfig.newHostConfig()
                         .withPortBindings(PortBinding.parse("9004:9004"))))
-               // .withEnv("TZ", "America/Fortaleza")
                 .withEnv("SPAWN_PROXY_LOGGER_LEVEL", "DEBUG")
                 .withEnv("SPAWN_STATESTORE_KEY", "3Jnb0hZiHIzHTOih7t2cTEPEpY98Tu1wvQkPfq/XwqE=")
                 .withEnv("PROXY_ACTOR_SYSTEM_NAME", spawnSystemName)
@@ -52,23 +51,23 @@ abstract class AbstractContainerBaseTest {
         DependencyInjector injector = SimpleDependencyInjector.createInjector();
         injector.bind(String.class, "Hello with Constructor");
 
-        spawnSystem = new Spawn.SpawnSystem()
-                .create(spawnSystemName)
-                .withActor(JoeActor.class)
-                .withActor(ActorWithConstructor.class, injector, arg -> new ActorWithConstructor((DependencyInjector) arg))
-                .withTerminationGracePeriodSeconds(5)
-                .withTransportOptions(TransportOpts.builder()
-                        .port(8091)
-                        .proxyPort(9004)
-                        .build())
-                .build();
-
         try {
+            spawnSystem = new Spawn.SpawnSystem()
+                    .create(spawnSystemName)
+                    .withActor(JoeActor.class)
+                    .withActor(ActorWithConstructor.class)
+                    .withTerminationGracePeriodSeconds(5)
+                    .withTransportOptions(TransportOpts.builder()
+                            .port(8091)
+                            .proxyPort(9004)
+                            .build())
+                    .build();
+
             spawnSystem.start();
+            log.info(String.format("%s started", spawnSystemName));
         } catch (SpawnException e) {
             throw new RuntimeException(e);
         }
-        log.info(String.format("%s started", spawnSystemName));
     }
 }
 
