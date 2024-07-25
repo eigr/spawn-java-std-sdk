@@ -109,7 +109,6 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
                     actor, commandName, maybeValueResponse);
 
             if (maybeValueResponse.isPresent()) {
-                System.out.println(String.format("R ---------------- %s", maybeValueResponse));
                 return buildResponse(maybeValueResponse.get(), actor, system);
             }
         } catch (Exception e) {

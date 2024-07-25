@@ -26,13 +26,14 @@ public final class JoeActor extends StatefulActor<State> {
 
     private Value setLanguage(ActorContext<State> context, Request msg) {
         if (context.getState().isPresent()) {
+            //Do something with previous state
         }
 
         return Value.at()
                 .response(Reply.newBuilder()
                         .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
                         .build())
-                .state(updateState("java"))
+                .state(updateState(msg.getLanguage()))
                 .reply();
     }
 

@@ -107,7 +107,7 @@ public class SpawnTest {
         assertNotNull(statelessNamedActor);
 
         Actor.Request msg = Actor.Request.newBuilder()
-                .setLanguage("Erlang")
+                .setLanguage("Elixir")
                 .build();
 
         Optional<Actor.Reply> maybeReply =
@@ -116,7 +116,7 @@ public class SpawnTest {
         if (maybeReply.isPresent()) {
             Actor.Reply reply = maybeReply.get();
             assertNotNull(reply);
-            assertEquals("Hi Erlang. Hello From Java", reply.getResponse());
+            assertEquals("Hi Elixir. Hello From Java", reply.getResponse());
         }
     }
 }
