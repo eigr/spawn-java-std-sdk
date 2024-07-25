@@ -11,6 +11,7 @@ import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
+import io.eigr.spawn.test.actors.StatelessNamedActor;
 import io.eigr.spawn.test.actors.UnNamedActor;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,6 +35,7 @@ public class SpawnTest {
                 .withActor(JoeActor.class)
                 .withActor(UnNamedActor.class)
                 .withActor(ActorWithConstructor.class)
+                .withActor(StatelessNamedActor.class)
                 .withTransportOptions(
                         TransportOpts.builder()
                                 .port(8091)
@@ -86,6 +88,30 @@ public class SpawnTest {
 
         Optional<Actor.Reply> maybeReply =
                 unNamedJoeActor.invoke("SetLanguage", msg, Actor.Reply.class);
+
+        if (maybeReply.isPresent()) {
+            Actor.Reply reply = maybeReply.get();
+            assertNotNull(reply);
+            assertEquals("Hi Erlang. Hello From Java", reply.getResponse());
+        }
+    }
+
+    @Test
+    public void testStatelessInvocation() throws ActorCreationException, ActorInvocationException {
+        ActorRef statelessNamedActor = spawnSystem.createActorRef(
+                ActorIdentity.of("spawn-system", "StatelessNamedActor"));
+
+        Class type = statelessNamedActor.getType();
+
+        assertEquals(type, StatelessNamedActor.class);
+        assertNotNull(statelessNamedActor);
+
+        Actor.Request msg = Actor.Request.newBuilder()
+                .setLanguage("Erlang")
+                .build();
+
+        Optional<Actor.Reply> maybeReply =
+                statelessNamedActor.invoke("SetLanguage", msg, Actor.Reply.class);
 
         if (maybeReply.isPresent()) {
             Actor.Reply reply = maybeReply.get();

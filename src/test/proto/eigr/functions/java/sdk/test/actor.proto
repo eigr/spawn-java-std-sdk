@@ -25,3 +25,7 @@ service TestActorConstructor {
 service UnNamedActor {
   rpc SetLanguage(Request) returns (Reply);
 }
+
+service StatelessNamedActor {
+  rpc SetLanguage(Request) returns (Reply);
+}

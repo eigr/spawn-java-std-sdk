@@ -301,6 +301,7 @@ public final class ActorRef {
                 .build();
 
         Protocol.InvocationResponse resp = this.client.invoke(invocationRequestBuilder.build());
+        System.out.println(String.format("Res %s", resp));
         final Protocol.RequestStatus status = resp.getStatus();
         switch (status.getStatus()) {
             case UNKNOWN:

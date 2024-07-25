@@ -91,10 +91,12 @@ public final class OkHttpSpawnClient implements SpawnClient {
 
         Call invocationCall = client.newCall(invocationRequest);
         try (Response callInvocationResponse = invocationCall.execute()){
+            System.out.println(String.format("---------------- %s", callInvocationResponse));
             assert callInvocationResponse.body() != null;
             return Protocol.InvocationResponse
                     .parseFrom(Objects.requireNonNull(callInvocationResponse.body()).bytes());
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ActorInvocationException(e);
         }
     }

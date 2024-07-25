@@ -12,6 +12,7 @@ import io.eigr.functions.protocol.actors.ActorOuterClass.ActorId;
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.StatelessActor;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
@@ -108,9 +109,11 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
                     actor, commandName, maybeValueResponse);
 
             if (maybeValueResponse.isPresent()) {
+                System.out.println(String.format("R ---------------- %s", maybeValueResponse));
                 return buildResponse(maybeValueResponse.get(), actor, system);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Error during handle request.", e);
             throw new IOException("Action result is null", e);
         }
@@ -229,8 +232,13 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
      */
     private <B extends ActorBehavior> B buildInstance(Entity entity) throws ReflectiveOperationException {
         Constructor<?> constructor = entity.getActor().getClass().getConstructor();
-        StatefulActor stActor = (StatefulActor) constructor.newInstance();
-        return (B) stActor.configure(entity.getCtx());
+        if (entity.isStateful()) {
+            StatefulActor stActor = (StatefulActor) constructor.newInstance();
+            return (B) stActor.configure(entity.getCtx());
+        }
+
+        StatelessActor stsActor = (StatelessActor) constructor.newInstance();
+        return (B) stsActor.configure(entity.getCtx());
     }
 
     /**
@@ -252,10 +260,10 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
     private Protocol.ActorInvocationResponse buildResponse(Value valueResponse, String actor, String system) {
         Protocol.Context.Builder updatedContextBuilder = Protocol.Context.newBuilder();
 
-        Optional.<GeneratedMessage>of(valueResponse.getState())
+        Optional.<GeneratedMessage>ofNullable(valueResponse.getState())
                 .ifPresent(state -> updatedContextBuilder.setState(Any.pack(state)));
 
-        Any encodedValue = Optional.<GeneratedMessage>of(valueResponse.getResponse())
+        Any encodedValue = Optional.<GeneratedMessage>ofNullable(valueResponse.getResponse())
                 .map(value -> Any.pack(value))
                 .orElse(Any.pack(Protocol.Noop.getDefaultInstance()));
 
