@@ -7,7 +7,6 @@ import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
 import io.eigr.spawn.internal.*;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

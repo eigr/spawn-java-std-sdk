@@ -82,8 +82,27 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
         this.channel = channel;
     }
 
-    public static Entity fromStatelessActorToEntity(BehaviorCtx ctx, Class<?> actor) {
-        return null;
+    public static Entity fromStatelessActorToEntity(BehaviorCtx ctx, Class<?> actor) throws ActorCreationException {
+        try {
+            Constructor<?> constructor = actor.getConstructor();
+            StatelessActor stActor = (StatelessActor) constructor.newInstance();
+            ActorBehavior behavior = stActor.configure(ctx);
+
+            if (behavior.getClass().isAssignableFrom(NamedActorBehavior.class)) {
+                Entity entity = buildNamedActor(null, stActor, (NamedActorBehavior) behavior, ctx);
+                return entity;
+            }
+
+            if (behavior.getClass().isAssignableFrom(UnNamedActorBehavior.class)) {
+                return buildUnNamedActor(null, stActor, (UnNamedActorBehavior) behavior, ctx);
+            }
+
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
+                 IllegalAccessException e) {
+            throw new ActorCreationException();
+        }
+
+        throw new ActorCreationException();
     }
 
     public static Entity fromStatefulActorToEntity(BehaviorCtx ctx, Class<?> actor) throws ActorCreationException {
@@ -199,7 +218,7 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
                 ctx, actor, behavior, actorName,
                 actor.getClass(),
                 getKind(kind),
-                null,
+                stateType,
                 actorName,
                 actor.isStateful(),
                 deactivateTimeout,
@@ -261,7 +280,7 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
                 actorName,
                 actor.getClass(),
                 getKind(kind),
-                null,
+                stateType,
                 actorName,
                 actor.isStateful(),
                 deactivateTimeout,
@@ -274,22 +293,6 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
 
         return entityType;
     }
-
-    /*private static Class<?> getInputType(Method method, Class<? extends Annotation> type) {
-        Class<?> inputType = null;
-
-        if (type.isAssignableFrom(Action.class)) {
-            Action act = method.getAnnotation(Action.class);
-            inputType = (!act.inputType().isAssignableFrom(Action.Default.class) ? act.inputType() : method.getParameterTypes()[0]);
-        }
-
-        if (type.isAssignableFrom(TimerAction.class)) {
-            TimerAction act = method.getAnnotation(TimerAction.class);
-            inputType = (!act.inputType().isAssignableFrom(TimerAction.Default.class) ? act.inputType() : method.getParameterTypes()[0]);
-        }
-
-        return inputType;
-    }*/
 
     private static ActorOuterClass.Kind getKind(ActorKind kind) {
         switch (kind) {
