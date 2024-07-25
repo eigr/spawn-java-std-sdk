@@ -53,7 +53,7 @@ abstract class AbstractContainerBaseTest {
 
         try {
             spawnSystem = new Spawn.SpawnSystem()
-                    .create(spawnSystemName)
+                    .create(spawnSystemName, injector)
                     .withActor(JoeActor.class)
                     .withActor(ActorWithConstructor.class)
                     .withTerminationGracePeriodSeconds(5)
