@@ -55,8 +55,7 @@ public abstract class ActorBehavior {
     }
 
     public static ActorOption action(String name, ActionNoBindings action) {
-        final Method method = action.getClass().getDeclaredMethods()[0];
-        final Class<?> outputType = method.getReturnType();
+        final Class<?> outputType = Value.class;
         return instance -> instance.actions.put(
                 name,
                 new ActionEnvelope(
@@ -65,8 +64,6 @@ public abstract class ActorBehavior {
     }
 
     public static <T extends Message> ActorOption action(String name, ActionBindings<T> action) {
-        final Method method = action.getClass().getDeclaredMethods()[0];
-
         final Class<?> inputType = action.getArgumentType();
         final Class<?> outputType = Value.class;
 
@@ -78,8 +75,7 @@ public abstract class ActorBehavior {
     }
 
     public static ActorOption timerAction(String name, int timer, ActionNoBindings action) {
-        final Method method = action.getClass().getDeclaredMethods()[0];
-        final Class<?> outputType = method.getReturnType();
+        final Class<?> outputType = Value.class;
 
         return instance -> instance.actions.put(
                 name, new ActionEnvelope(
@@ -88,9 +84,8 @@ public abstract class ActorBehavior {
     }
 
     public static <T extends GeneratedMessage> ActorOption timerAction(String name, int timer, ActionBindings<T> action) {
-        final Method method = action.getClass().getDeclaredMethods()[0];
-        final Class<?> inputType = method.getParameterTypes()[1];
-        final Class<?> outputType = method.getReturnType();
+        final Class<?> inputType = action.getArgumentType();
+        final Class<?> outputType = Value.class;
 
         return instance -> instance.actions.put(
                 name,
