@@ -101,7 +101,18 @@ public final class Spawn {
      * @since 0.0.1
      */
     public ActorRef createActorRef(ActorIdentity identity) throws ActorCreationException {
-        return ActorRef.of(this.client, this.actorIdCache, identity);
+        Class actorType;
+        if (identity.isParent()) {
+            actorType = this.entities.stream().filter(e -> e.getActorName().equalsIgnoreCase(identity.getParent()))
+                    .map(e -> e.getActorType())
+                    .findFirst().get();
+        } else {
+            actorType = this.entities.stream().filter(e -> e.getActorName().equalsIgnoreCase(identity.getName()))
+                    .map(e -> e.getActorType())
+                    .findFirst().get();
+        }
+
+        return ActorRef.of(this.client, this.actorIdCache, identity, actorType);
     }
 
     /**
@@ -127,14 +138,25 @@ public final class Spawn {
 
         return identities.stream().map(identity -> {
             try {
+                Class actorType;
+                if (identity.isParent()) {
+                    actorType = this.entities.stream().filter(e -> e.getActorName().equalsIgnoreCase(identity.getParent()))
+                            .map(e -> e.getActorType())
+                            .findFirst().get();
+                } else {
+                    actorType = this.entities.stream().filter(e -> e.getActorName().equalsIgnoreCase(identity.getName()))
+                            .map(e -> e.getActorType())
+                            .findFirst().get();
+                }
+
                 if (identity.isParent()) {
                     return ActorRef.of(
                             this.client,
                             this.actorIdCache,
-                            ActorIdentity.of(identity.getSystem(), identity.getName(), identity.getParent(), false));
+                            ActorIdentity.of(identity.getSystem(), identity.getName(), identity.getParent(), false), actorType);
                 }
 
-                return ActorRef.of(this.client, this.actorIdCache, identity);
+                return ActorRef.of(this.client, this.actorIdCache, identity, actorType);
             } catch (ActorCreationException e) {
                 throw new SpawnFailureException(e);
             }
@@ -277,7 +299,13 @@ public final class Spawn {
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", Spawn.class.getSimpleName() + "[", "]").add("system='" + system + "'").add("port=" + port).add("host='" + host + "'").add("proxyHost='" + proxyHost + "'").add("proxyPort=" + proxyPort).toString();
+        return new StringJoiner(", ", Spawn.class.getSimpleName() + "[", "]")
+                .add("system='" + system + "'")
+                .add("port=" + port)
+                .add("host='" + host + "'")
+                .add("proxyHost='" + proxyHost + "'")
+                .add("proxyPort=" + proxyPort)
+                .toString();
     }
 
     public static final class SpawnSystem {

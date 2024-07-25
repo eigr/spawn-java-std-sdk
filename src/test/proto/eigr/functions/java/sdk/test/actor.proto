@@ -21,3 +21,7 @@ service JoeActor {
 service TestActorConstructor {
   rpc SetLanguage(Request) returns (Reply);
 }
+
+service UnNamedActor {
+  rpc SetLanguage(Request) returns (Reply);
+}

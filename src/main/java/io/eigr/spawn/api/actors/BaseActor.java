@@ -8,4 +8,6 @@ public abstract class BaseActor {
     public abstract ActorBehavior configure(BehaviorCtx ctx);
 
     public abstract Boolean isStateful();
+
+
 }

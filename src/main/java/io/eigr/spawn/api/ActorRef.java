@@ -24,9 +24,12 @@ public final class ActorRef {
 
     private final SpawnClient client;
 
-    private ActorRef(ActorOuterClass.ActorId actorId, SpawnClient client) {
+    private final Class type;
+
+    private ActorRef(ActorOuterClass.ActorId actorId, SpawnClient client, Class type) {
         this.client = client;
         this.actorId = actorId;
+        this.type = type;
     }
 
     /**
@@ -39,7 +42,7 @@ public final class ActorRef {
      * @return the ActorRef instance
      * @since 0.0.1
      */
-    protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity) throws ActorCreationException {
+    protected static ActorRef of(SpawnClient client, Cache<ActorOuterClass.ActorId, ActorRef> cache, ActorIdentity identity, Class actorType) throws ActorCreationException {
         ActorOuterClass.ActorId actorId;
 
         if (identity.isParent()) {
@@ -59,7 +62,7 @@ public final class ActorRef {
             spawnActor(actorId, client);
         }
 
-        ref = new ActorRef(actorId, client);
+        ref = new ActorRef(actorId, client, actorType);
         cache.put(actorId, ref);
         return ref;
     }
@@ -92,6 +95,10 @@ public final class ActorRef {
                 .addAllActors(actorIds)
                 .build();
         client.spawn(req);
+    }
+
+    public Class getType() {
+        return this.type;
     }
 
     /**

@@ -11,7 +11,8 @@ import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
-import org.junit.Before;
+import io.eigr.spawn.test.actors.UnNamedActor;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -21,16 +22,17 @@ import static org.junit.Assert.assertNotNull;
 
 public class SpawnTest {
 
-    private Spawn spawnSystem;
+    private static Spawn spawnSystem;
 
-    @Before
-    public void before() throws Exception {
+    @BeforeClass
+    public static void setup() throws Exception {
         DependencyInjector injector = SimpleDependencyInjector.createInjector();
         injector.bind(String.class, "Hello with Constructor");
 
         spawnSystem = new Spawn.SpawnSystem()
                 .create("spawn-system", injector)
                 .withActor(JoeActor.class)
+                .withActor(UnNamedActor.class)
                 .withActor(ActorWithConstructor.class)
                 .withTransportOptions(
                         TransportOpts.builder()
@@ -45,10 +47,13 @@ public class SpawnTest {
     }
 
     @Test
-    public void testApp() throws ActorCreationException, ActorInvocationException {
+    public void testNamedInvocation() throws ActorCreationException, ActorInvocationException {
         ActorRef joeActor = spawnSystem.createActorRef(
                 ActorIdentity.of("spawn-system", "JoeActor"));
 
+        Class type = joeActor.getType();
+
+        assertEquals(type, JoeActor.class);
         assertNotNull(joeActor);
 
         Actor.Request msg = Actor.Request.newBuilder()
@@ -57,6 +62,30 @@ public class SpawnTest {
 
         Optional<Actor.Reply> maybeReply =
                 joeActor.invoke("SetLanguage", msg, Actor.Reply.class);
+
+        if (maybeReply.isPresent()) {
+            Actor.Reply reply = maybeReply.get();
+            assertNotNull(reply);
+            assertEquals("Hi Erlang. Hello From Java", reply.getResponse());
+        }
+    }
+
+    @Test
+    public void testUnNamedInvocation() throws ActorCreationException, ActorInvocationException {
+        ActorRef unNamedJoeActor = spawnSystem.createActorRef(
+                ActorIdentity.of("spawn-system", "UnNamedJoeActor", "UnNamedActor"));
+
+        Class type = unNamedJoeActor.getType();
+
+        assertEquals(type, UnNamedActor.class);
+        assertNotNull(unNamedJoeActor);
+
+        Actor.Request msg = Actor.Request.newBuilder()
+                .setLanguage("Erlang")
+                .build();
+
+        Optional<Actor.Reply> maybeReply =
+                unNamedJoeActor.invoke("SetLanguage", msg, Actor.Reply.class);
 
         if (maybeReply.isPresent()) {
             Actor.Reply reply = maybeReply.get();
