@@ -31,7 +31,7 @@ abstract class AbstractContainerBaseTest {
         SPAWN_CONTAINER = new GenericContainer<>(DockerImageName.parse(spawnProxyImage))
                 .withCreateContainerCmdModifier(e -> e.withHostConfig(HostConfig.newHostConfig()
                         .withPortBindings(PortBinding.parse("9004:9004"))))
-                .withEnv("TZ", "America/Fortaleza")
+               // .withEnv("TZ", "America/Fortaleza")
                 .withEnv("SPAWN_PROXY_LOGGER_LEVEL", "DEBUG")
                 .withEnv("SPAWN_STATESTORE_KEY", "3Jnb0hZiHIzHTOih7t2cTEPEpY98Tu1wvQkPfq/XwqE=")
                 .withEnv("PROXY_ACTOR_SYSTEM_NAME", spawnSystemName)
