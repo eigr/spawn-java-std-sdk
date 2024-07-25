@@ -1,5 +1,5 @@
 # Variables
-VERSION := 1.0-SNAPSHOT
+VERSION := 1.3.0
 PACKAGE := target/spawn-java-demo-${VERSION}-shaded.jar
 
 clean:
