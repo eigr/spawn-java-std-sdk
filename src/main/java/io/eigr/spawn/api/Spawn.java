@@ -219,7 +219,10 @@ public final class Spawn {
 
             Map<String, String> tags = new HashMap<>();
             ActorOuterClass.Metadata metadata = ActorOuterClass.Metadata.newBuilder()
-                    .setChannelGroup(actorEntity.getChannel()).putAllTags(tags)
+                    .addChannelGroup(ActorOuterClass.Channel.newBuilder()
+                                    .setTopic(actorEntity.getChannel())
+                                    .build())
+                    .putAllTags(tags)
                     .build();
 
             return ActorOuterClass.Actor.newBuilder()
