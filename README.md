@@ -360,7 +360,7 @@ public ActorBehavior configure(BehaviorCtx context) {
 }
 ```
 
-This `configure` method is overridden from StatefulActor and is used to configure the actor's behavior.
+This `configure` method is overridden from `StatefulActor` and is used to configure the actor's behavior.
 
 * name("JoeActor"): Specifies the name of the actor.
 * channel("test.channel"): Specifies the channel the actor listens to.
