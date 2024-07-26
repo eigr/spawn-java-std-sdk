@@ -335,7 +335,65 @@ public final class JoeActor extends StatefulActor<State> {
 }
 ```
 
-Now with our Actor properly defined, we just need to start the SDK correctly. Create another file called App.java 
+### Dissecting the code
+
+Class Declaration
+
+```java
+public final class JoeActor extends StatefulActor<State> {
+ // ...
+}
+```
+
+The JoeActor class extends StatefulActor<State>. StatefulActor is a generic class provided by the Spawn API, 
+which takes a type parameter for the state. In this case, the state type is State.
+
+Configure Actor Behavior
+```java
+@Override
+public ActorBehavior configure(BehaviorCtx context) {
+    return new NamedActorBehavior(
+            name("JoeActor"),
+            channel("test.channel"),
+            action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+    );
+}
+```
+
+This `configure` method is overridden from StatefulActor and is used to configure the actor's behavior.
+
+* name("JoeActor"): Specifies the name of the actor.
+* channel("test.channel"): Specifies the channel the actor listens to.
+* action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage)): Binds the `SetLanguage` action to the `setLanguage` method, 
+  which takes a Request message as input. Where the second parameter of `ActionBindings.of(type, lambda)` method is a lambda.
+
+Handle request
+
+```java
+private Value setLanguage(ActorContext<State> context, Request msg) {
+    if (context.getState().isPresent()) {
+        // Do something with the previous state
+    }
+
+    return Value.at()
+            .response(Reply.newBuilder()
+                    .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
+                    .build())
+            .state(updateState(msg.getLanguage()))
+            .reply();
+}
+
+```
+
+This method `setLanguage` is called when the `SetLanguage` action is invoked. It takes an ActorContext<State> and a Request message as parameters.
+
+* `context.getState().isPresent()`: Checks if there is a previous existing state.
+* The method then creates a new `Value` response:
+  * `response(Reply.newBuilder().setResponse(...).build())`: Builds a Reply object with a response message.
+  * `state(updateState(msg.getLanguage()))`: Updates the state with the new language.
+  * `reply()`: Indicates that this is a reply message. You could also ignore the reply if you used a `noReply()` method instead of the `reply` method.
+
+Ok now with our Actor properly defined, we just need to start the SDK correctly. Create another file called App.java 
 to serve as your application's entrypoint and fill it with the following content:
 
 ```Java
@@ -664,7 +722,7 @@ recommended for handling serverless loads.
 
 In addition to these types, Spawn also allows the developer to choose Stateful actors, who need to maintain the state, 
 or Stateless, those who do not need to maintain the state.
-For this the developer just needs to make use of the correct annotation. For example, I could declare a Serverless Actor using the following code:
+For this the developer just needs to make extend of the correct base class. For example, I could declare a Serverless Actor using the following code:
 
 ```java
 package io.eigr.spawn.java.demo.actors;
@@ -694,9 +752,6 @@ public final class StatelessNamedActor extends StatelessActor {
    }
 
    private Value setLanguage(ActorContext<State> context, Request msg) {
-      if (context.getState().isPresent()) {
-      }
-
       return Value.at()
               .response(Reply.newBuilder()
                       .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
@@ -707,7 +762,7 @@ public final class StatelessNamedActor extends StatelessActor {
 
 ```
 
-Other than that the same Named, UnNamed types are supported. Just use the StatelessNamedActor or StatelessUnNamedActor super class.
+Other than that the same Named, UnNamed types are supported. Just use the NamedActorBehavior or UnNamedActorBehavior class inside a `configure` method.
 
 ### Considerations about Spawn actors
 
