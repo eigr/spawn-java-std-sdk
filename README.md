@@ -365,7 +365,7 @@ This `configure` method is overridden from `StatefulActor` and is used to config
 * `name("JoeActor")`: Specifies the name of the actor.
 * `channel("test.channel")`: Specifies the channel the actor listens to.
 * `action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))`: Binds the `SetLanguage` action to the `setLanguage` method, 
-  which takes a Request message as input. Where the second parameter of `ActionBindings.of(type, lambda)` method is a lambda.
+  which takes a `Request` message as input. Where the second parameter of `ActionBindings.of(type, lambda)` method is a lambda.
 
 Handle request
 
