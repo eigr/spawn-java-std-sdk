@@ -362,9 +362,9 @@ public ActorBehavior configure(BehaviorCtx context) {
 
 This `configure` method is overridden from `StatefulActor` and is used to configure the actor's behavior.
 
-* name("JoeActor"): Specifies the name of the actor.
-* channel("test.channel"): Specifies the channel the actor listens to.
-* action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage)): Binds the `SetLanguage` action to the `setLanguage` method, 
+* `name("JoeActor")`: Specifies the name of the actor.
+* `channel("test.channel")`: Specifies the channel the actor listens to.
+* `action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))`: Binds the `SetLanguage` action to the `setLanguage` method, 
   which takes a Request message as input. Where the second parameter of `ActionBindings.of(type, lambda)` method is a lambda.
 
 Handle request
@@ -385,11 +385,11 @@ private Value setLanguage(ActorContext<State> context, Request msg) {
 
 ```
 
-This method `setLanguage` is called when the `SetLanguage` action is invoked. It takes an ActorContext<State> and a Request message as parameters.
+This method `setLanguage` is called when the `SetLanguage` action is invoked. It takes an `ActorContext<State>` and a `Request` message as parameters.
 
 * `context.getState().isPresent()`: Checks if there is a previous existing state.
 * The method then creates a new `Value` response:
-  * `response(Reply.newBuilder().setResponse(...).build())`: Builds a Reply object with a response message.
+  * `response(Reply.newBuilder().setResponse(...).build())`: Builds a `Reply` object with a response message.
   * `state(updateState(msg.getLanguage()))`: Updates the state with the new language.
   * `reply()`: Indicates that this is a reply message. You could also ignore the reply if you used a `noReply()` method instead of the `reply` method.
 
