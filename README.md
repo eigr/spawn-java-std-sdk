@@ -337,26 +337,35 @@ public final class JoeActor extends StatefulActor<State> {
 
 ### Dissecting the code
 
-Class Declaration
+***Class Declaration***
 
 ```java
+package io.eigr.spawn.java.demo;
+
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.java.demo.domain.Actor.State;
+
 public final class JoeActor extends StatefulActor<State> {
  // ...
 }
 ```
 
-The JoeActor class extends StatefulActor<State>. StatefulActor is a generic class provided by the Spawn API, 
-which takes a type parameter for the state. In this case, the state type is State.
+The `JoeActor` class extends `StatefulActor<State>`. `StatefulActor` is a generic class provided by the Spawn API, 
+which takes a type parameter for the state. In this case, the state type is `io.eigr.spawn.java.demo.domain.Actor.State` 
+defined in above protobuf file.
 
-Configure Actor Behavior
+***Configure Actor Behavior***
+
 ```java
-@Override
-public ActorBehavior configure(BehaviorCtx context) {
-    return new NamedActorBehavior(
-            name("JoeActor"),
-            channel("test.channel"),
-            action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
-    );
+public final class JoeActor extends StatefulActor<State> {
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("JoeActor"),
+              channel("test.channel"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
 }
 ```
 
@@ -370,22 +379,24 @@ This `configure` method is overridden from `StatefulActor` and is used to config
                                                                                 which takes a `Request` message as input. 
                                                                                 Where the second parameter of `ActionBindings.of(type, lambda)` method is a lambda.
 
-Handle request
+***Handle request***
 
 ```java
-private Value setLanguage(ActorContext<State> context, Request msg) {
-    if (context.getState().isPresent()) {
-        // Do something with the previous state
-    }
+public final class JoeActor extends StatefulActor<State> {
+   //
+   private Value setLanguage(ActorContext<State> context, Request msg) {
+      if (context.getState().isPresent()) {
+         // Do something with the previous state
+      }
 
-    return Value.at()
-            .response(Reply.newBuilder()
-                    .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
-                    .build())
-            .state(updateState(msg.getLanguage()))
-            .reply();
+      return Value.at()
+              .response(Reply.newBuilder()
+                      .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
+                      .build())
+              .state(updateState(msg.getLanguage()))
+              .reply();
+   }
 }
-
 ```
 
 This method `setLanguage` is called when the `SetLanguage` action is invoked. It takes an `ActorContext<State>` and a `Request` message as parameters.
@@ -500,6 +511,8 @@ volumes:
   mariadb:
 
 ```
+
+> **_NOTE:_** Or just use the [Spawn CLI](https://github.com/eigr/spawn?tab=readme-ov-file#getting-started-with-spawn) to take care of the development environment for you.
 
 You may also want your Actors to be initialized with some dependent objects similarly to how you would use the 
 dependency injection pattern. 
