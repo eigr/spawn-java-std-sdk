@@ -372,9 +372,9 @@ public final class JoeActor extends StatefulActor<State> {
 This `configure` method is overridden from `StatefulActor` and is used to configure the actor's behavior.
 
 * `name("JoeActor")`: Specifies the name of the actor. Note that the Actor name has the same name as the service declared 
-                      in protobuf. This is not a coincidence, the Spawn proxy uses the protobuf metadata to map actors and 
-                      their actions and therefore these names should correctly reflect this behavior.
-* `channel("test.channel")`: Specifies the channel the actor listens to.
+                      in protobuf. This is not a coincidence, the Spawn proxy uses the protobuf metadata to map **actors** and 
+                      their **actions** and therefore these names should correctly reflect this behavior.
+* `channel("test.channel")`: Specifies the channel the actor listens to. See [Broadcast](#broadcast) section below.
 * `action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))`: Binds the `SetLanguage` action to the `setLanguage` method, 
                                                                                 which takes a `Request` message as input. 
                                                                                 Where the second parameter of `ActionBindings.of(type, lambda)` method is a lambda.
