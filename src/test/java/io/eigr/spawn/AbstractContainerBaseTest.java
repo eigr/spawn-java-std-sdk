@@ -9,6 +9,8 @@ import io.eigr.spawn.api.extensions.DependencyInjector;
 import io.eigr.spawn.api.extensions.SimpleDependencyInjector;
 import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
+import io.eigr.spawn.test.actors.StatelessNamedActor;
+import io.eigr.spawn.test.actors.UnNamedActor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.Testcontainers;
@@ -55,7 +57,9 @@ abstract class AbstractContainerBaseTest {
             spawnSystem = new Spawn.SpawnSystem()
                     .create(spawnSystemName, injector)
                     .withActor(JoeActor.class)
+                    .withActor(UnNamedActor.class)
                     .withActor(ActorWithConstructor.class)
+                    .withActor(StatelessNamedActor.class)
                     .withTerminationGracePeriodSeconds(5)
                     .withTransportOptions(TransportOpts.builder()
                             .port(8091)
