@@ -94,7 +94,7 @@ The second thing we have to do is add the spawn dependency to the project.
 <dependency>
    <groupId>com.github.eigr</groupId>
    <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v1.2.7</version>
+   <version>v1.3.0</version>
 </dependency>
 ```
 We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
@@ -128,7 +128,7 @@ See below a full example of the pom.xml file:
       <dependency>
          <groupId>com.github.eigr</groupId>
          <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v1.2.7</version>
+         <version>v1.3.0</version>
       </dependency>
       <dependency>
          <groupId>ch.qos.logback</groupId>
@@ -254,19 +254,22 @@ And let's populate this file with the following content:
 syntax = "proto3";
 
 package domain;
-
 option java_package = "io.eigr.spawn.java.demo.domain";
 
-message JoeState {
-  repeated string languages = 1;
+message State {
+   repeated string languages = 1;
 }
 
 message Request {
-  string language = 1;
+   string language = 1;
 }
 
 message Reply {
-  string response = 1;
+   string response = 1;
+}
+
+service JoeActor {
+   rpc SetLanguage(Request) returns (Reply);
 }
 ```
 
@@ -287,35 +290,45 @@ Populate this file with the following content:
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.java.demo.domain.Domain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class)
-public class Joe {
-   private static final Logger log = LoggerFactory.getLogger(Joe.class);
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-   @Action(name = "hi", inputType = Domain.Request.class)
-   public Value hi(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-      log.info("Received invocation. Message: {}. Context: {}", msg, context);
+public final class JoeActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("JoeActor"),
+              channel("test.channel"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
       if (context.getState().isPresent()) {
-         log.info("State is present and value is {}", context.getState().get());
+         //Do something with previous state
       }
 
       return Value.at()
-              .response(Domain.Reply.newBuilder()
-                      .setResponse("Hello From Java")
+              .response(Reply.newBuilder()
+                      .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
                       .build())
-              .state(updateState("erlang"))
+              .state(updateState(msg.getLanguage()))
               .reply();
    }
 
-   private Domain.JoeState updateState(String language) {
-      return Domain.JoeState.newBuilder()
+   private State updateState(String language) {
+      return State.newBuilder()
               .addLanguages(language)
               .build();
    }
@@ -434,37 +447,37 @@ In this case, it is enough to declare a constructor that receives a single argum
 ```java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.java.demo.domain.Domain;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-import java.util.Map;
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
+public final class JoeActor extends StatefulActor<State> {
 
-@StatefulNamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
-public final class Joe {
-   private final String someValue;
+   private String defaultMessage;
 
-   public Joe(Map<String, String> args) {
-      this.someValue = args.get("someKey");
-   }
-
-   @Action(inputType = Domain.Request.class)
-   public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-      return Value.at()
-              .response(Domain.Reply.newBuilder()
-                      .setResponse("Hello From Java")
-                      .build())
-              .state(updateState("java"))
-              .reply();
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      defaultMessage = context.getInjector().getInstance(String.class);
+      return new NamedActorBehavior(
+              name("JoeActor"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
    }
 
    // ...
 }
 ```
 
-Then you also need to register your Actor passing arguments like as follows:
+Then you also need to register your Actor using injector :
 
 ```java
 package io.eigr.spawn.java.demo;
@@ -476,12 +489,12 @@ import java.util.Map;
 
 public class App {
    public static void main(String[] args) {
-      Map<String, String> actorConstructorArgs = new HashMap<>();
-      actorConstructorArgs.put("someKey", "someValue");
+      DependencyInjector injector = SimpleDependencyInjector.createInjector();
+      injector.bind(String.class, "Hello with Constructor");
 
       Spawn spawnSystem = new Spawn.SpawnSystem()
-              .create("spawn-system")
-              .withActor(Joe.class, actorConstructorArgs, arg -> new Joe((Map<String, String>) arg))
+              .create("spawn-system", injector)
+              .withActor(Joe.class)
               .build();
 
       spawnSystem.start();
@@ -543,45 +556,52 @@ public class MessageServiceImpl implements MessageService {
 }
 ```
 
-2. Second, let's define an actor so that it receives an instance of the DependencyInjector class through the class constructor:
+2. Second, let's define an actor so that it receives an instance of the DependencyInjector class through the context of configure method:
 
 ```java
-package io.eigr.spawn.test.actors;
+package io.eigr.spawn.java.demo;
 
 import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.StatefulActor;
 import io.eigr.spawn.api.actors.Value;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.extensions.DependencyInjector;
-import io.eigr.spawn.java.test.domain.Actor;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatefulNamedActor(name = "test_actor_constructor", stateType = Actor.State.class)
-public final class Joe {
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
+public final class JoeActor extends StatefulActor<State> {
 
-    private final MessageService messageService;
+   private String defaultMessage;
 
-    public Joe(DependencyInjector injector) {
-       // Note how to use dependency injection here to get a concrete class of MessageService.
-        this.messageService = injector.getInstance(MessageService.class);
-    }
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      defaultMessage = context.getInjector().getInstance(String.class);
+      return new NamedActorBehavior(
+              name("JoeActor"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
 
-    @Action(inputType = Actor.Request.class)
-    public Value setLanguage(Actor.Request msg, ActorContext<Actor.State> context) {
-        return Value.at()
-                .response(Actor.Reply.newBuilder()
-                        .setResponse(messageService.getDefaultMessage())
-                        .build())
-                .state(updateState("java"))
-                .reply();
-    }
+   private Value setLanguage(ActorContext<State> context, Request msg) {
+      return Value.at()
+              .response(Reply.newBuilder()
+                      .setResponse(defaultMessage)
+                      .build())
+              .state(updateState("java"))
+              .reply();
+   }
 
-    private Actor.State updateState(String language) {
-        return Actor.State.newBuilder()
-                .addLanguages(language)
-                .build();
-    }
+   private State updateState(String language) {
+      return State.newBuilder()
+              .addLanguages(language)
+              .build();
+   }
 }
-
 ```
 
 3. Then you can pass your dependent classes this way to your Actor:
@@ -600,10 +620,13 @@ public class App {
       If you try to add different instances of the same type you will receive an error.        
       */ 
       injector.bind(MessageService.class, new MessageServiceImpl());
+      
+      // or using alias for put different values of same key types
+      injector.bind(MessageService.class, "myMessageService", new MessageServiceImpl());
 
       Spawn spawnSystem = new Spawn.SpawnSystem()
-              .create("spawn-system")
-              .withActor(Joe.class, injector -> new Joe((DependencyInjector) injector))
+              .create("spawn-system", injector)
+              .withActor(Joe.class)
               .build();
 
       spawnSystem.start();
@@ -614,7 +637,7 @@ public class App {
 It is important to note that this helper mechanism does not currently implement any type of complex dependency graph. 
 Therefore, it will not build objects based on complex dependencies nor take care of the object lifecycle for you. 
 In other words, all instances added through the bind method of the SimpleDependencyInjector class will be singletons. 
-This mechanism works much more like a bucket of objects that will be forwarded via your actor's constructor.
+This mechanism works much more like a bucket of objects that will be forwarded via your actor's context.
 
 > **_NOTE:_** **Why not use the java cdi 2.0 spec?**
 Our goals are to keep the SDK for standalone Java applications very simple. We consider that implementing the entire specification would not be viable for us at the moment. It would be a lot of effort and energy expenditure that we consider spending on other parts of the ecosystem that we think will guarantee us more benefits.
@@ -644,28 +667,47 @@ or Stateless, those who do not need to maintain the state.
 For this the developer just needs to make use of the correct annotation. For example, I could declare a Serverless Actor using the following code:
 
 ```java
-package io.eigr.spawn.test.actors;
+package io.eigr.spawn.java.demo.actors;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateless.StatelessNamedActor;
-import io.eigr.spawn.java.test.domain.Actor;
+import io.eigr.spawn.api.actors.StatelessActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatelessNamedActor(name = "test_joe")
-public class JoeActor {
-   @Action
-   public Value hi(Actor.Request msg, ActorContext<?> context) {
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
+
+public final class StatelessNamedActor extends StatelessActor {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("StatelessNamedActor"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
+      if (context.getState().isPresent()) {
+      }
+
       return Value.at()
-              .response(Actor.Reply.newBuilder()
-                      .setResponse("Hello From Java")
+              .response(Reply.newBuilder()
+                      .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
                       .build())
               .reply();
    }
 }
+
 ```
 
-Other than that the same Named, UnNamed types are supported. Just use the StatelessNamed or StatelessUnNamed annotations.
+Other than that the same Named, UnNamed types are supported. Just use the StatelessNamedActor or StatelessUnNamedActor super class.
 
 ### Considerations about Spawn actors
 
@@ -683,33 +725,51 @@ Whereas unnamed and pooled actors are instantiated the first time only when they
 
 Actors in Spawn can subscribe to a thread and receive, as well as broadcast, events for a given thread.
 
-To consume from a topic, you just need to configure the Actor annotation using the channel option as follows:
+To consume from a topic, you just need to configure the Actor using the channel option as follows:
 
-```Java
-@StatefulNamedActor(name = "joe", stateful = true, stateType = Domain.JoeState.class, channel = "test")
 ```
-In the case above, the Actor `joe` was configured to receive events that are forwarded to the topic called `test`.
+return new NamedActorBehavior(
+  name("JoeActor"),
+  channel("test.channel"),
+);
+```
+In the case above, the Actor `JoeActor` was configured to receive events that are forwarded to the topic called `test.channel`.
 
 To produce events in a topic, just use the Broadcast Workflow. The example below demonstrates a complete example of 
 producing and consuming events. In this case, the same actor is the event consumer and producer, but in a more realistic scenario, 
 different actors would be involved in these processes.
 
 ```Java
-package io.eigr.spawn.java.demo;
+package io.eigr.spawn.java.demo.actors;
 
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
 import io.eigr.spawn.api.actors.workflows.Broadcast;
-// some imports omitted for brevity
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class, channel = "test")
-public class Joe {
-   @TimerAction(name = "hi", period = 60000)
-   public Value hi(ActorContext<Domain.JoeState> context) {
-      Domain.Request msg = Domain.Request.newBuilder()
-              .setLanguage("erlang")
-              .build();
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
+public final class LoopActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("LoopActor"),
+              channel("test.channel"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
       return Value.at()
-              .flow(Broadcast.to("test", "setLanguage", msg))
+              .flow(Broadcast.to("test.channel", "setLanguage", msg))
               .response(Domain.Reply.newBuilder()
                       .setResponse("Hello From Erlang")
                       .build())
@@ -717,16 +777,7 @@ public class Joe {
               .reply();
    }
 
-   @Action(inputType = Domain.Request.class)
-   public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
-      return Value.at()
-              .response(Domain.Reply.newBuilder()
-                      .setResponse("Hello From Java")
-                      .build())
-              .state(updateState("java"))
-              .reply();
-   }
-   // ....
+   // ...
 }
 ```
 
@@ -736,36 +787,45 @@ Actors can also emit side effects to other Actors as part of their response.
 See an example:
 
 ```Java
-package io.eigr.spawn.java.demo;
+package io.eigr.spawn.java.demo.actors;
 
-import io.eigr.spawn.api.ActorIdentity;
-import io.eigr.spawn.api.ActorRef;
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.actors.workflows.SideEffect;
-import io.eigr.spawn.java.demo.domain.Domain;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatefulNamedActor(name = "side_effect_actor", stateType = Domain.State.class)
-public class SideEffectActorExample {
-   @Action
-   public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
-      // Create a ActorReference to send side effect message
-      ActorRef sideEffectReceiverActor = ctx.getSpawnSystem()
-              .createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-      return Value.at()
-              .response(Domain.Reply.newBuilder()
-                      .setResponse("Hello From Java")
-                      .build())
-              .state(updateState("java"))
-              .flow(SideEffect.to(sideEffectReceiverActor, "setLanguage", msg))
-              //.flow(SideEffect.to(emailSenderReceiverActor, "sendEmail", emailMessage))
-              //.flow(SideEffect.to(otherReceiverActor, "otherAction", otherMessage))
-              .noReply();
+public final class JoeActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("JoeActor"),
+              channel("test.channel"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
    }
 
+   private Value setLanguage(ActorContext<State> context, Request msg) {
+      ActorRef sideEffectReceiverActor = ctx.getSpawnSystem()
+              .createActorRef(ActorIdentity.of("spawn-system", "MikeFriendActor", "MikeParentActor"));
+
+      return Value.at()
+              .flow(SideEffect.to(sideEffectReceiverActor, "setLanguage", msg))
+              .response(Reply.newBuilder()
+                      .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
+                      .build())
+              .state(updateState(msg.getLanguage()))
+              .noReply();
+   }
+   
    // ....
 }
 ```
@@ -783,31 +843,34 @@ an action in another Actor.
 See an example:
 
 ```Java
-package io.eigr.spawn.java.demo;
+package io.eigr.spawn.java.demo.actors;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.ActorIdentity;
-import io.eigr.spawn.api.ActorRef;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.actors.workflows.Forward;
-import io.eigr.spawn.java.demo.domain.Domain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatefulNamedActor(name = "routing_actor", stateType = Domain.State.class)
-public class ForwardExample {
-   private static final Logger log = LoggerFactory.getLogger(ForwardExample.class);
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-   @Action
-   public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
-      log.info("Received invocation. Message: {}. Context: {}", msg, ctx);
-      if (ctx.getState().isPresent()) {
-         log.info("State is present and value is {}", ctx.getState().get());
-      }
+public final class RoutingActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("RoutingActor"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
       ActorRef forwardedActor = ctx.getSpawnSystem()
-              .createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
+              .createActorRef(ActorIdentity.of("spawn-system", "MikeFriendActor", "MikeActor"));
 
       return Value.at()
               .flow(Forward.to(forwardedActor, "setLanguage"))
@@ -826,39 +889,45 @@ In the end, just like in a Forward, it is the response of the last Actor in the 
 Example:
 
 ```Java
-package io.eigr.spawn.java.demo;
+package io.eigr.spawn.java.demo.actors;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.ActorIdentity;
-import io.eigr.spawn.api.ActorRef;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.actors.workflows.Pipe;
-import io.eigr.spawn.java.demo.domain.Domain;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-@StatefulNamedActor(name = "pipe_actor", stateType = Domain.State.class)
-public class PipeActorExample {
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-   @Action
-   public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> ctx) throws Exception {
+public final class PipeActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("PipeActor"),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
       ActorRef pipeReceiverActor = ctx.getSpawnSystem()
-              .createActorRef(ActorIdentity.of("spawn-system", "joe"));
+              .createActorRef(ActorIdentity.of("spawn-system", "JoeActor"));
 
       return Value.at()
-              .response(Domain.Reply.newBuilder()
+              .response(Reply.newBuilder()
                       .setResponse("Hello From Java")
                       .build())
               .flow(Pipe.to(pipeReceiverActor, "someAction"))
               .state(updateState("java"))
               .noReply();
    }
-
-   private Domain.State updateState(String language) {
-      return Domain.State.newBuilder()
-              .addLanguages(language)
-              .build();
-   }
+   
+   // ...
 }
 ```
 
@@ -875,32 +944,51 @@ during the moment of the Actor's deactivation.
 That is, data is saved at regular intervals asynchronously while the Actor is active and once synchronously 
 when the Actor suffers a deactivation, when it is turned off.
 
-These snapshots happen from time to time. And this time is configurable through the ***snapshotTimeout*** property of 
-the ***StatefulNamedActor*** or ***UnStatefulNamedActor*** annotation. 
+These snapshots happen from time to time. And this time is configurable through the ***snapshotTimeout*** method of 
+the ***NamedActorBehavior*** or ***UnNamedActorBehavior*** class. 
 However, you can tell the Spawn runtime that you want it to persist the data immediately synchronously after executing an Action.
 And this can be done in the following way:
 
 Example:
 
 ```Java
-import io.eigr.spawn.api.actors.Value;
-import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.java.demo.domain.Domain;
+package io.eigr.spawn.test.actors;
 
-@StatefulNamedActor(name = "joe", stateType = Domain.JoeState.class)
-public final class Joe {
-   @Action(inputType = Domain.Request.class)
-   public Value setLanguage(Domain.Request msg, ActorContext<Domain.JoeState> context) {
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
+
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
+
+public final class JoeActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new NamedActorBehavior(
+              name("JoeActor"),
+              snapshot(1000),
+              deactivated(60000),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
       return Value.at()
-              .response(Domain.Reply.newBuilder()
-                      .setResponse("Hello From Java")
+              .response(Reply.newBuilder()
+                      .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
                       .build())
-              .state(updateState("java"), true)
+              .state(updateState(msg.getLanguage()), true)
               .reply();
    }
-   // ...
+
+  // ...
 }
 ```
 
@@ -938,13 +1026,13 @@ In the sections below we will give some examples of how to invoke different type
 To invoke an actor named like the one we defined in section [Getting Started](#getting-started) we could do as follows:
 
 ```Java
-ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "joe"));
+ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "JoeActor"));
         
-Domain.Request msg = Domain.Request.newBuilder()
+Request msg = Request.newBuilder()
        .setLanguage("erlang")
        .build();
         
-Optional<Domain.Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class);
+Optional<Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Reply.class);
 Domain.Reply reply = maybeResponse.get();
 ```
 
@@ -976,7 +1064,7 @@ public class App {
 
       spawnSystem.start();
 
-      ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "joe"));
+      ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "JoeActor"));
 
       Domain.Request msg = Domain.Request.newBuilder()
               .setLanguage("erlang")
@@ -997,50 +1085,67 @@ To better exemplify, let's first show the Actor's definition code and later how 
 name at runtime:
 
 ```java
-package io.eigr.spawn.java.demo;
-// omitted imports for brevity...
+package io.eigr.spawn.test.actors;
 
-@UnStatefulNamedActor(name = "abs_actor", stateful = true, stateType = Domain.State.class)
-public class AbstractActor {
-    @Action(inputType = Domain.Request.class)
-    public Value setLanguage(Domain.Request msg, ActorContext<Domain.State> context) {
-        return Value.at()
-                .response(Domain.Reply.newBuilder()
-                        .setResponse("Hello From Java")
-                        .build())
-                .state(updateState("java"))
-                .reply();
-    }
+import io.eigr.spawn.api.actors.ActorContext;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.UnNamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.demo.domain.Actor.Reply;
+import io.eigr.spawn.java.demo.domain.Actor.Request;
+import io.eigr.spawn.java.demo.domain.Actor.State;
 
-    private Domain.State updateState(String language) {
-        return Domain.State.newBuilder()
-                .addLanguages(language)
-                .build();
-    }
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
+
+public final class MikeActor extends StatefulActor<State> {
+
+   @Override
+   public ActorBehavior configure(BehaviorCtx context) {
+      return new UnNamedActorBehavior(
+              name("MikeActor"),
+              snapshot(1000),
+              deactivated(60000),
+              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+      );
+   }
+
+   private Value setLanguage(ActorContext<State> context, Request msg) {
+      return Value.at()
+              .response(Reply.newBuilder()
+                      .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
+                      .build())
+              .state(updateState(msg.getLanguage()), true)
+              .reply();
+   }
+
+   // ...
 }
 ```
 
 So you could define and call this actor at runtime like this:
 
 ```Java
-ActorRef mike = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
+ActorRef mike = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "MikeInstanceActor", "MikeActor"));
         
-Domain.Request msg = Domain.Request.newBuilder()
+Request msg = Request.newBuilder()
        .setLanguage("erlang")
        .build();
 
-Optional<Domain.Reply> maybeResponse = mike.invoke("setLanguage", msg, Domain.Reply.class);
+Optional<Reply> maybeResponse = mike.invoke("setLanguage", msg, Reply.class);
 Domain.Reply reply = maybeResponse.get();
 ```
 
 The important part of the code above is the following snippet:
 
 ```Java
-ActorRef mike = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "mike", "abs_actor"));
+ActorRef mike = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "MikeInstanceActor", "MikeActor"));
 ```
 
-These tells Spawn that this actor will actually be named at runtime. The name parameter with value "mike" 
-in this case is just a reference to "abs_actor" Actor that will be used later 
+These tells Spawn that this actor will actually be named at runtime. The name parameter with value "MikeInstanceActor" 
+in this case is just a reference to "MikeActor" Actor that will be used later 
 so that we can actually create an instance of the real Actor.
 
 ### Async
@@ -1063,17 +1168,12 @@ It is possible to change the request waiting timeout using the invocation option
 ```Java
 package io.eigr.spawn.java.demo;
 
-import io.eigr.spawn.api.ActorIdentity;
-import io.eigr.spawn.api.ActorRef;
-import io.eigr.spawn.api.InvocationOpts;
-import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.TransportOpts;
-import io.eigr.spawn.java.demo.domain.Domain;
+// omitted for brevity
 
 import java.util.Optional;
 
 public class App {
-   public static void main(String[] args) throws Exception {
+   public static void main(String[] args) {
       Spawn spawnSystem = new Spawn.SpawnSystem()
               .create("spawn-system")
               .withActor(Joe.class)
@@ -1081,9 +1181,9 @@ public class App {
 
       spawnSystem.start();
 
-      ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "joe"));
+      ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "JoeActor"));
 
-      Domain.Request msg = Domain.Request.newBuilder()
+      Request msg = Request.newBuilder()
               .setLanguage("erlang")
               .build();
 
@@ -1091,7 +1191,7 @@ public class App {
               .timeoutSeconds(Duration.ofSeconds(30))
               .build();
       
-      Optional<Domain.Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Domain.Reply.class, opts);
+      Optional<Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Reply.class, opts);
    }
 }
 ```

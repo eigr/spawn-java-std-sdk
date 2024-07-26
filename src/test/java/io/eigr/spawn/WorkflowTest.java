@@ -3,46 +3,32 @@ package io.eigr.spawn;
 import io.eigr.functions.protocol.Protocol;
 import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
-import io.eigr.spawn.api.Spawn;
-import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.api.actors.workflows.Broadcast;
 import io.eigr.spawn.api.actors.workflows.Forward;
 import io.eigr.spawn.api.actors.workflows.Pipe;
 import io.eigr.spawn.api.actors.workflows.SideEffect;
 import io.eigr.spawn.api.exceptions.SpawnException;
 import io.eigr.spawn.java.test.domain.Actor;
-import io.eigr.spawn.test.actors.JoeActor;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class WorkflowTest {
+public class WorkflowTest extends AbstractContainerBaseTest {
 
     private ActorRef joeActorRef;
-    private Spawn spawnSystem;
+
     @Before
     public void before() throws SpawnException {
-        spawnSystem = new Spawn.SpawnSystem()
-                .create("spawn-system")
-                .withActor(JoeActor.class)
-                .withTransportOptions(
-                        TransportOpts.builder()
-                                .port(8091)
-                                .proxyPort(9003)
-                                .build()
-                )
-                .build();
-
         joeActorRef = spawnSystem.createActorRef(
-                ActorIdentity.of("spawn-system", "joe"));
+                ActorIdentity.of(spawnSystemName, "joe"));
     }
 
     @Test
     public void testBroadcastBuilder() {
         Broadcast broadcast = Broadcast.to("test.channel", "hi", Actor.Request.getDefaultInstance());
         final Protocol.Broadcast protocolBroadcast = broadcast.build();
-        assertEquals("hi", protocolBroadcast.getActionName());
+        assertEquals("hi", protocolBroadcast.getChannelGroup());
         assertEquals("test.channel", protocolBroadcast.getChannelGroup());
         assertNotNull(protocolBroadcast.getValue());
     }

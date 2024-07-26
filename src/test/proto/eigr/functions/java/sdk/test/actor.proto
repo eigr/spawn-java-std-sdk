@@ -13,3 +13,19 @@ message Request {
 message Reply {
   string response = 1;
 }
+
+service JoeActor {
+  rpc SetLanguage(Request) returns (Reply);
+}
+
+service TestActorConstructor {
+  rpc SetLanguage(Request) returns (Reply);
+}
+
+service UnNamedActor {
+  rpc SetLanguage(Request) returns (Reply);
+}
+
+service StatelessNamedActor {
+  rpc SetLanguage(Request) returns (Reply);
+}

@@ -95,6 +95,7 @@ public final class OkHttpSpawnClient implements SpawnClient {
             return Protocol.InvocationResponse
                     .parseFrom(Objects.requireNonNull(callInvocationResponse.body()).bytes());
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ActorInvocationException(e);
         }
     }

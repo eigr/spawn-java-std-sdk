@@ -44,8 +44,9 @@ public final class Broadcast<T extends GeneratedMessage> {
 
     public Protocol.Broadcast build() {
         Protocol.Broadcast.Builder builder = Protocol.Broadcast.newBuilder();
+        //TODO use Channel object instead of string
         if (this.action.isPresent()) {
-            builder.setActionName(this.action.get());
+            builder.setChannelGroup(this.action.get());
         }
 
         if (this.channel.isPresent()) {

@@ -6,30 +6,31 @@ import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.UnNamedActorBehavior;
 import io.eigr.spawn.internal.ActionBindings;
 import io.eigr.spawn.java.test.domain.Actor.Reply;
 import io.eigr.spawn.java.test.domain.Actor.Request;
 import io.eigr.spawn.java.test.domain.Actor.State;
 
-import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
-import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
-public final class ActorWithConstructor extends StatefulActor<State> {
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-    private String defaultMessage;
+public final class UnNamedActor extends StatefulActor<State> {
 
     @Override
     public ActorBehavior configure(BehaviorCtx context) {
-        defaultMessage = context.getInjector().getInstance(String.class);
-        return new NamedActorBehavior(
-                name("TestActorConstructor"),
+        return new UnNamedActorBehavior(
+                name("UnNamedActor"),
                 action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
         );
     }
 
     private Value setLanguage(ActorContext<State> context, Request msg) {
+        if (context.getState().isPresent()) {
+        }
+
         return Value.at()
                 .response(Reply.newBuilder()
-                        .setResponse(defaultMessage)
+                        .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
                         .build())
                 .state(updateState("java"))
                 .reply();

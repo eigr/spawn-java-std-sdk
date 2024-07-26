@@ -1,29 +1,44 @@
 package io.eigr.spawn.test.actors;
 
-import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.annotations.Action;
-import io.eigr.spawn.api.actors.annotations.stateful.StatefulNamedActor;
-import io.eigr.spawn.api.actors.workflows.SideEffect;
-import io.eigr.spawn.java.test.domain.Actor;
+import io.eigr.spawn.api.actors.StatefulActor;
+import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
+import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
+import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
+import io.eigr.spawn.internal.ActionBindings;
+import io.eigr.spawn.java.test.domain.Actor.Reply;
+import io.eigr.spawn.java.test.domain.Actor.Request;
+import io.eigr.spawn.java.test.domain.Actor.State;
 
-@StatefulNamedActor(name = "test_joe", stateType = Actor.State.class, channel = "test.channel")
-public final class JoeActor {
-    @Action(inputType = Actor.Request.class)
-    public Value setLanguage(Actor.Request msg, ActorContext<Actor.State> context) {
+import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
+
+public final class JoeActor extends StatefulActor<State> {
+
+    @Override
+    public ActorBehavior configure(BehaviorCtx context) {
+        return new NamedActorBehavior(
+                name("JoeActor"),
+                channel("test.channel"),
+                action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
+        );
+    }
+
+    private Value setLanguage(ActorContext<State> context, Request msg) {
         if (context.getState().isPresent()) {
+            //Do something with previous state
         }
 
         return Value.at()
-                .response(Actor.Reply.newBuilder()
-                        .setResponse("Hello From Java")
+                .response(Reply.newBuilder()
+                        .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
                         .build())
-                .state(updateState("java"))
+                .state(updateState(msg.getLanguage()))
                 .reply();
     }
 
-    private Actor.State updateState(String language) {
-        return Actor.State.newBuilder()
+    private State updateState(String language) {
+        return State.newBuilder()
                 .addLanguages(language)
                 .build();
     }
