@@ -1238,9 +1238,7 @@ It is possible to change the request waiting timeout using the invocation option
 ```Java
 package io.eigr.spawn.java.demo;
 
-// omitted for brevity
-
-import java.util.Optional;
+// omitted imports for brevity
 
 public class App {
    public static void main(String[] args) {
