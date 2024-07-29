@@ -18,17 +18,13 @@ public final class JoeActor extends StatefulActor<State> {
     @Override
     public ActorBehavior configure(BehaviorCtx context) {
         return new NamedActorBehavior(
-                name("JoeActor"),
+                //name("JoeActor"),
                 channel("test.channel"),
                 action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
         );
     }
 
     private Value setLanguage(ActorContext<State> context, Request msg) {
-        if (context.getState().isPresent()) {
-            //Do something with previous state
-        }
-
         return Value.at()
                 .response(Reply.newBuilder()
                         .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))

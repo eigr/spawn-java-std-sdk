@@ -9,5 +9,4 @@ public abstract class BaseActor {
 
     public abstract Boolean isStateful();
 
-
 }

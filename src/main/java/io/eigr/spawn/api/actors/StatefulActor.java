@@ -13,4 +13,5 @@ public abstract class StatefulActor<S> extends BaseActor {
     public Boolean isStateful() {
         return true;
     }
+
 }

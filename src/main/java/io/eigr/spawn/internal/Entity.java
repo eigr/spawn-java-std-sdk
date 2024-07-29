@@ -16,6 +16,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public final class Entity<A extends BaseActor, B extends ActorBehavior> {
@@ -174,7 +175,11 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
     }
 
     private static Entity buildNamedActor(Class<?> stateType, StatefulActor actor, NamedActorBehavior behavior, BehaviorCtx ctx) {
-        final String actorName = behavior.getName();
+        String actorName = behavior.getName() ;
+        if (Objects.isNull(actorName) || behavior.getName().isBlank()) {
+            actorName = actor.getClass().getSimpleName();
+        }
+
         final ActorKind kind = behavior.getActorType();
         final String channel = behavior.getChannel();
         final long deactivateTimeout = behavior.getDeactivatedTimeout();
@@ -205,7 +210,11 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
     }
 
     private static Entity buildNamedActor(Class<?> stateType, StatelessActor actor, NamedActorBehavior behavior, BehaviorCtx ctx) {
-        final String actorName = behavior.getName();
+        String actorName = behavior.getName() ;
+        if (Objects.isNull(actorName) || behavior.getName().isBlank()) {
+            actorName = actor.getClass().getSimpleName();
+        }
+
         final ActorKind kind = behavior.getActorType();
         final String channel = behavior.getChannel();
         final long deactivateTimeout = behavior.getDeactivatedTimeout();
@@ -233,7 +242,11 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
     }
 
     private static Entity buildUnNamedActor(Class<?> stateType, StatefulActor actor, UnNamedActorBehavior behavior, BehaviorCtx ctx) {
-        final String actorName = behavior.getName();
+        String actorName = behavior.getName() ;
+        if (Objects.isNull(actorName) || behavior.getName().isBlank()) {
+            actorName = actor.getClass().getSimpleName();
+        }
+
         final ActorKind kind = behavior.getActorType();
         final String channel = behavior.getChannel();
         long deactivateTimeout = behavior.getDeactivatedTimeout();
@@ -264,7 +277,11 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
     }
 
     private static Entity buildUnNamedActor(Class<?> stateType, StatelessActor actor, UnNamedActorBehavior behavior, BehaviorCtx ctx) {
-        final String actorName = behavior.getName();
+        String actorName = behavior.getName() ;
+        if (Objects.isNull(actorName) || behavior.getName().isBlank()) {
+            actorName = actor.getClass().getSimpleName();
+        }
+
         final ActorKind kind = behavior.getActorType();
         final String channel = behavior.getChannel();
         long deactivateTimeout = behavior.getDeactivatedTimeout();
