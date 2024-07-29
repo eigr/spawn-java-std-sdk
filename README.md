@@ -745,7 +745,7 @@ package io.eigr.spawn.java.demo.actors;
 
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.StatelessActor;
-import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.api.actors.Value;F
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
@@ -840,7 +840,7 @@ public final class LoopActor extends StatefulActor<State> {
    private Value setLanguage(ActorContext<State> context, Request msg) {
       return Value.at()
               .flow(Broadcast.to("test.channel", "setLanguage", msg))
-              .response(Domain.Reply.newBuilder()
+              .response(Reply.newBuilder()
                       .setResponse("Hello From Erlang")
                       .build())
               .state(updateState("erlang"))
@@ -1103,7 +1103,7 @@ Request msg = Request.newBuilder()
        .build();
         
 Optional<Reply> maybeResponse = joeActor.invoke("setLanguage", msg, Reply.class);
-Domain.Reply reply = maybeResponse.get();
+Reply reply = maybeResponse.get();
 ```
 
 More detailed in complete main class:
@@ -1136,11 +1136,11 @@ public class App {
 
       ActorRef joeActor = spawnSystem.createActorRef(ActorIdentity.of("spawn-system", "JoeActor"));
 
-      Domain.Request msg = Domain.Request.newBuilder()
+      Request msg = Request.newBuilder()
               .setLanguage("erlang")
               .build();
      
-      joeActor.invoke("setLanguage", msg, Domain.Reply.class)
+      joeActor.invoke("setLanguage", msg, Reply.class)
               .ifPresent(response ->  log.info("Response is: {}", response));
    }
 }
@@ -1205,7 +1205,7 @@ Request msg = Request.newBuilder()
        .build();
 
 Optional<Reply> maybeResponse = mike.invoke("setLanguage", msg, Reply.class);
-Domain.Reply reply = maybeResponse.get();
+Reply reply = maybeResponse.get();
 ```
 
 The important part of the code above is the following snippet:
