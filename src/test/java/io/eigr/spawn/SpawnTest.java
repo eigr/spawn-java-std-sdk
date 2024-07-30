@@ -13,9 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 class SpawnTest extends AbstractContainerBaseTest {
 
     @Test
