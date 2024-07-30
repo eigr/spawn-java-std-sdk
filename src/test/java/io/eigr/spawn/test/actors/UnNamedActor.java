@@ -25,9 +25,6 @@ public final class UnNamedActor implements StatefulActor<State> {
     }
 
     private Value setLanguage(ActorContext<State> context, Request msg) {
-        if (context.getState().isPresent()) {
-        }
-
         return Value.at()
                 .response(Reply.newBuilder()
                         .setResponse(String.format("Hi %s. Hello From Java", msg.getLanguage()))
