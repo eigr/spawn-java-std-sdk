@@ -303,7 +303,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -345,19 +345,19 @@ package io.eigr.spawn.java.demo;
 import io.eigr.spawn.api.actors.StatefulActor;
 import io.eigr.spawn.java.demo.domain.Actor.State;
 
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
  // ...
 }
 ```
 
-The `JoeActor` class extends `StatefulActor<State>`. `StatefulActor` is a generic class provided by the Spawn API, 
+The `JoeActor` class implements `StatefulActor<State>` interface. `StatefulActor` is a generic interface provided by the Spawn API, 
 which takes a type parameter for the state. In this case, the state type is `io.eigr.spawn.java.demo.domain.Actor.State` 
 defined in above protobuf file.
 
 ***Configure Actor Behavior***
 
 ```java
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
       return new NamedActorBehavior(
@@ -382,7 +382,7 @@ This `configure` method is overridden from `StatefulActor` and is used to config
 ***Handle request***
 
 ```java
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
    //
    private Value setLanguage(ActorContext<State> context, Request msg) {
       if (context.getState().isPresent()) {
@@ -534,7 +534,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
 
    private String defaultMessage;
 
@@ -648,7 +648,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
 
    private String defaultMessage;
 
@@ -738,14 +738,14 @@ recommended for handling serverless loads.
 
 In addition to these types, Spawn also allows the developer to choose Stateful actors, who need to maintain the state, 
 or Stateless, those who do not need to maintain the state.
-For this the developer just needs to make extend of the correct base class. For example, I could declare a Serverless Actor using the following code:
+For this the developer just needs to make extend of the correct base interface. For example, I could declare a Serverless Actor using the following code:
 
 ```java
 package io.eigr.spawn.java.demo.actors;
 
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.StatelessActor;
-import io.eigr.spawn.api.actors.Value;F
+import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
@@ -756,7 +756,7 @@ import io.eigr.spawn.java.demo.domain.Actor.Request;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
 
-public final class StatelessNamedActor extends StatelessActor {
+public final class StatelessNamedActor implements StatelessActor {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -826,7 +826,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class LoopActor extends StatefulActor<State> {
+public final class LoopActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -872,7 +872,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -928,7 +928,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class RoutingActor extends StatefulActor<State> {
+public final class RoutingActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -974,7 +974,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class PipeActor extends StatefulActor<State> {
+public final class PipeActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -1037,7 +1037,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {
@@ -1170,7 +1170,7 @@ import io.eigr.spawn.java.demo.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class MikeActor extends StatefulActor<State> {
+public final class MikeActor implements StatefulActor<State> {
 
    @Override
    public ActorBehavior configure(BehaviorCtx context) {

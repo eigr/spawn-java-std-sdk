@@ -14,7 +14,7 @@ import io.eigr.spawn.java.test.domain.Actor.State;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
 
-public final class StatelessNamedActor extends StatelessActor {
+public class StatelessNamedActor implements StatelessActor {
 
     @Override
     public ActorBehavior configure(BehaviorCtx context) {

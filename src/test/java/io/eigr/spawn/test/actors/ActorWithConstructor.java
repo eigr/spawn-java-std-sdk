@@ -13,7 +13,7 @@ import io.eigr.spawn.java.test.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
-public final class ActorWithConstructor extends StatefulActor<State> {
+public final class ActorWithConstructor implements StatefulActor<State> {
 
     private String defaultMessage;
 

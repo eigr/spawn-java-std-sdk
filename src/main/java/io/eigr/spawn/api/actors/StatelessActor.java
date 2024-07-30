@@ -1,8 +1,8 @@
 package io.eigr.spawn.api.actors;
 
-public abstract class StatelessActor extends BaseActor {
+public interface StatelessActor extends BaseActor {
     @Override
-    public Boolean isStateful() {
+    default Boolean isStateful() {
         return false;
     }
 }

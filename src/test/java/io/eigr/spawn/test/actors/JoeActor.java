@@ -13,7 +13,7 @@ import io.eigr.spawn.java.test.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.*;
 
-public final class JoeActor extends StatefulActor<State> {
+public final class JoeActor implements StatefulActor<State> {
 
     @Override
     public ActorBehavior configure(BehaviorCtx context) {
