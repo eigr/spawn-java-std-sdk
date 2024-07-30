@@ -110,7 +110,7 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
         try {
             Constructor<?> constructor = actor.getConstructor();
             StatefulActor stActor = (StatefulActor) constructor.newInstance();
-            Class<?> stateType = stActor.getStateType();
+            Class<?> stateType = stActor.getStateType(stActor.getClass().getGenericSuperclass().getClass());
             ActorBehavior behavior = stActor.configure(ctx);
 
             if (behavior.getClass().isAssignableFrom(NamedActorBehavior.class)) {

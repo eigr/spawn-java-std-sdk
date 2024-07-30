@@ -11,6 +11,11 @@ import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
 import io.eigr.spawn.test.actors.StatelessNamedActor;
 import io.eigr.spawn.test.actors.UnNamedActor;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.Testcontainers;
@@ -20,14 +25,15 @@ import org.testcontainers.utility.DockerImageName;
 abstract class AbstractContainerBaseTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractContainerBaseTest.class);
-    private static final GenericContainer<?> SPAWN_CONTAINER;
+    private static GenericContainer<?> SPAWN_CONTAINER;
     private static final String spawnProxyImage = "eigr/spawn-proxy:1.4.1-rc.1";
     private static final String userFunctionPort = "8091";
     private static final String spawnProxyPort = "9004";
-    protected static final Spawn spawnSystem;
+    protected static Spawn spawnSystem;
     protected static final String spawnSystemName = "spawn-system-test";
 
-    static {
+    @BeforeAll
+    public static void setup() {
         Testcontainers.exposeHostPorts(8091);
 
         SPAWN_CONTAINER = new GenericContainer<>(DockerImageName.parse(spawnProxyImage))
@@ -72,6 +78,12 @@ abstract class AbstractContainerBaseTest {
         } catch (SpawnException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @AfterAll
+    public static void teardown() {
+        SPAWN_CONTAINER.stop();
+
     }
 }
 
