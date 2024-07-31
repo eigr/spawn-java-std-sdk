@@ -11,15 +11,14 @@ import io.eigr.spawn.test.actors.ActorWithConstructor;
 import io.eigr.spawn.test.actors.JoeActor;
 import io.eigr.spawn.test.actors.StatelessNamedActor;
 import io.eigr.spawn.test.actors.UnNamedActor;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.DockerImageName;
 
-abstract class AbstractContainerBaseTest {
+public abstract class AbstractContainerBaseTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractContainerBaseTest.class);
     private static GenericContainer<?> SPAWN_CONTAINER;
@@ -29,13 +28,14 @@ abstract class AbstractContainerBaseTest {
     protected static Spawn spawnSystem;
     protected static final String spawnSystemName = "spawn-system-test";
 
-    @BeforeAll
-    public static void setup() {
+    static {
         Testcontainers.exposeHostPorts(8091);
 
         SPAWN_CONTAINER = new GenericContainer<>(DockerImageName.parse(spawnProxyImage))
                 .withCreateContainerCmdModifier(e -> e.withHostConfig(HostConfig.newHostConfig()
                         .withPortBindings(PortBinding.parse("9004:9004"))))
+                .waitingFor(new LogMessageWaitStrategy()
+                        .withRegEx(".*Proxy Application started successfully.*"))
                 .withEnv("SPAWN_PROXY_LOGGER_LEVEL", "DEBUG")
                 .withEnv("SPAWN_STATESTORE_KEY", "3Jnb0hZiHIzHTOih7t2cTEPEpY98Tu1wvQkPfq/XwqE=")
                 .withEnv("PROXY_ACTOR_SYSTEM_NAME", spawnSystemName)
@@ -75,12 +75,6 @@ abstract class AbstractContainerBaseTest {
         } catch (SpawnException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @AfterAll
-    public static void teardown() {
-        SPAWN_CONTAINER.stop();
-
     }
 }
 
