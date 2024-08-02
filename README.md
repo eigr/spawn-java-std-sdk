@@ -1,4 +1,6 @@
 # Spawn JVM SDK
+[![](https://jitpack.io/v/eigr/spawn-java-std-sdk.svg)](https://jitpack.io/#eigr/spawn-java-std-sdk)
+
 JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
 
 # Table of Contents
