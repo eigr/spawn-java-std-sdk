@@ -1,7 +1,5 @@
 package io.eigr.spawn;
 
-import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.PortBinding;
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.TransportOpts;
 import io.eigr.spawn.api.exceptions.SpawnException;
@@ -24,7 +22,6 @@ public abstract class AbstractContainerBaseTest {
     private static GenericContainer<?> SPAWN_CONTAINER;
     private static final String spawnProxyImage = "eigr/spawn-proxy:1.4.1-rc.1";
     private static final String userFunctionPort = "8091";
-    private static final String spawnProxyPort = "9004";
     protected static Spawn spawnSystem;
     protected static final String spawnSystemName = "spawn-system-test";
 
@@ -32,8 +29,6 @@ public abstract class AbstractContainerBaseTest {
         Testcontainers.exposeHostPorts(8091);
 
         SPAWN_CONTAINER = new GenericContainer<>(DockerImageName.parse(spawnProxyImage))
-                .withCreateContainerCmdModifier(e -> e.withHostConfig(HostConfig.newHostConfig()
-                        .withPortBindings(PortBinding.parse("9004:9004"))))
                 .waitingFor(new LogMessageWaitStrategy()
                         .withRegEx(".*Proxy Application started successfully.*"))
                 .withEnv("SPAWN_PROXY_LOGGER_LEVEL", "DEBUG")
@@ -44,13 +39,12 @@ public abstract class AbstractContainerBaseTest {
                 .withEnv("NODE_COOKIE", "cookie-9ce3712b0c3ee21b582c30f942c0d4da-HLuZyQzy+nt0p0r/PVVFTp2tqfLom5igrdmwkYSuO+Q=")
                 .withEnv("POD_NAMESPACE", spawnSystemName)
                 .withEnv("POD_IP", spawnSystemName)
-                .withEnv("PROXY_HTTP_PORT", spawnProxyPort)
+                .withEnv("PROXY_HTTP_PORT", "9004")
                 .withEnv("USER_FUNCTION_PORT", userFunctionPort)
-                .withEnv("USER_FUNCTION_HOST", "host.docker.internal") // Docker
-                .withExtraHost("host.docker.internal", "host-gateway") // Docker
-//                .withEnv("USER_FUNCTION_HOST", "host.containers.internal") // Podman
-//                .withExtraHost("host.containers.internal", "host-gateway") // Podman
-                .withExposedPorts(9004);
+                .withEnv("USER_FUNCTION_HOST", "host.testcontainers.internal")
+                .withExtraHost("host.testcontainers.internal", "host-gateway")
+                .withExposedPorts(9004)
+                .withAccessToHost(true);
         SPAWN_CONTAINER.start();
 
         DependencyInjector injector = SimpleDependencyInjector.createInjector();
@@ -65,8 +59,9 @@ public abstract class AbstractContainerBaseTest {
                     .withActor(StatelessNamedActor.class)
                     .withTerminationGracePeriodSeconds(5)
                     .withTransportOptions(TransportOpts.builder()
+                            .host(SPAWN_CONTAINER.getHost())
                             .port(8091)
-                            .proxyPort(9004)
+                            .proxyPort(SPAWN_CONTAINER.getMappedPort(9004))
                             .build())
                     .build();
 
