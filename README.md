@@ -7,6 +7,7 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
 
 1. [Overview](#overview)
 2. [Getting Started](#getting-started)
+   - [Deploy](#deploy)
 3. [Advanced Use Cases](#advanced-use-cases)
     - [Dependency Injection](#dependency-injection)
     - [Types of Actors](#types-of-actors)
@@ -17,16 +18,16 @@ JVM User Language Support for [Spawn](https://github.com/eigr/spawn).
     - [Forward](#forward)
     - [Pipe](#pipe)
     - [State Management](#state-management)
-5. [Using Actors](#using-actors)
+4. [Using Actors](#using-actors)
     - [Call Named Actors](#call-named-actors)
     - [Call Unnamed Actors](#call-unnamed-actors)
     - [Async](#async)
     - [Timeouts](#timeouts)
-6. [Deploy](#deploy)
+5. [Deploy](#deploy)
     - [Defining an ActorSystem](#defining-an-actorsystem)
     - [Defining an ActorHost](#defining-an-actorhost)
     - [Activators](#activators)
-7. [Actor Model](#actor-model)
+6. [Actor Model](#actor-model)
     - [Virtual Actors](#virtual-actors)
 
 
@@ -601,6 +602,10 @@ mvn compile jib:build
 ```
 
 And this is it to start! Now that you know the basics of local development, we can go a little further.
+
+### Deploy
+
+Please see main documentation [page](https://github.com/eigr/spawn/blob/main/docs/getting_started.md).
 
 ## Advanced Use Cases
 
