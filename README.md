@@ -48,189 +48,17 @@ For more information consult the main repository [documentation](https://github.
 
 ## Getting Started
 
-First we must create a new Java project. In this example we will use [Maven](https://maven.apache.org/) as our package manager.
+First we must need to install spawn cli tool to create a new Java project.
 
 ```shell
-mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.4
+curl -sSL https://github.com/eigr/spawn/releases/download/v1.4.2/install.sh | sh
 ```
 Now you will need to fill in the data for groupId, artifactId, version, and package. 
 Let's call our maven artifact spawn-java-demo. The output of this command will be similar to the output below
+
 ```shell
-$ mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.4
-[INFO] Scanning for projects...
-[INFO] Generating project in Interactive mode
-[INFO] Archetype repository not defined. Using the one from [org.apache.maven.archetypes:maven-archetype-quickstart:1.4] found in catalog remote
-Define value for property 'groupId': io.eigr.spawn
-Define value for property 'artifactId': spawn-java-demo
-Define value for property 'version' 1.0-SNAPSHOT: : 
-Define value for property 'package' io.eigr.spawn: : io.eigr.spawn.java.demo 
-Confirm properties configuration:
-groupId: io.eigr.spawn
-artifactId: spawn-java-demo
-version: 1.0-SNAPSHOT
-package: io.eigr.spawn.java.demo
- Y: : y
-[INFO] ----------------------------------------------------------------------------
-[INFO] Using following parameters for creating project from Archetype: maven-archetype-quickstart:1.4
-[INFO] ----------------------------------------------------------------------------
-[INFO] Parameter: groupId, Value: io.eigr.spawn
-[INFO] Parameter: artifactId, Value: spawn-java-demo
-[INFO] Parameter: version, Value: 1.0-SNAPSHOT
-[INFO] Parameter: package, Value: io.eigr.spawn.java.demo
-[INFO] Parameter: packageInPathFormat, Value: io/eigr/spawn/java/demo
-[INFO] Parameter: package, Value: io.eigr.spawn.java.demo
-[INFO] Parameter: groupId, Value: io.eigr.spawn
-[INFO] Parameter: artifactId, Value: spawn-java-demo
-[INFO] Parameter: version, Value: 1.0-SNAPSHOT
-[INFO] Project created from Archetype in dir: /home/sleipnir/workspaces/eigr/spawn-java-demo
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  01:39 min
-[INFO] Finished at: 2023-08-28T11:37:57-03:00
-[INFO] ------------------------------------------------------------------------
+spawn new java hello_world --group-id=io.eigr.spawn --artifact-id=spawn-java-demo --version=1.0.0 --package=io.eigr.spawn.java.demo
 ```
-
-The second thing we have to do is add the spawn dependency to the project.
-
-```xml
-<dependency>
-   <groupId>com.github.eigr</groupId>
-   <artifactId>spawn-java-std-sdk</artifactId>
-   <version>v1.3.1</version>
-</dependency>
-```
-We're also going to configure a few things for our application build to work, including compiling the protobuf files. 
-See below a full example of the pom.xml file:
-
-```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-   <modelVersion>4.0.0</modelVersion>
-   <groupId>io.eigr.spawn</groupId>
-   <artifactId>spawn-java-demo</artifactId>
-   <packaging>jar</packaging>
-   <version>1.0-SNAPSHOT</version>
-   <name>spawn-java-demo</name>
-   <url>https://eigr.io</url>
-
-   <properties>
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
-      <project.encoding>UTF-8</project.encoding>
-   </properties>
-
-   <repositories>
-      <repository>
-         <id>jitpack.io</id>
-         <url>https://jitpack.io</url>
-      </repository>
-   </repositories>
-
-   <dependencies>
-      <dependency>
-         <groupId>com.github.eigr</groupId>
-         <artifactId>spawn-java-std-sdk</artifactId>
-         <version>v1.3.1</version>
-      </dependency>
-      <dependency>
-         <groupId>ch.qos.logback</groupId>
-         <artifactId>logback-classic</artifactId>
-         <version>1.4.7</version>
-      </dependency>
-      <dependency>
-         <groupId>junit</groupId>
-         <artifactId>junit</artifactId>
-         <version>4.13.2</version>
-         <scope>test</scope>
-      </dependency>
-   </dependencies>
-
-   <build>
-      <extensions>
-         <extension>
-            <groupId>kr.motd.maven</groupId>
-            <artifactId>os-maven-plugin</artifactId>
-            <version>1.6.2</version>
-         </extension>
-      </extensions>
-      <!-- make jar runnable -->
-      <plugins>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-               <execution>
-                  <goals>
-                     <goal>shade</goal>
-                  </goals>
-                  <configuration>
-                     <shadedArtifactAttached>true</shadedArtifactAttached>
-                     <transformers>
-                        <transformer implementation=
-                                             "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                           <mainClass>io.eigr.spawn.java.demo.App</mainClass>
-                        </transformer>
-                     </transformers>
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.7</version>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-               <source>11</source>
-               <target>11</target>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.xolstice.maven.plugins</groupId>
-            <artifactId>protobuf-maven-plugin</artifactId>
-            <version>0.6.1</version>
-            <configuration>
-               <protocArtifact>com.google.protobuf:protoc:3.19.2:exe:${os.detected.classifier}</protocArtifact>
-               <pluginId>grpc-java</pluginId>
-               <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.47.0:exe:${os.detected.classifier}</pluginArtifact>
-            </configuration>
-            <executions>
-               <execution>
-                  <goals>
-                     <goal>compile</goal>
-                     <goal>compile-custom</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.2.0</version>
-            <executions>
-               <execution>
-                  <id>add-test-sources</id>
-                  <phase>generate-test-sources</phase>
-                  <goals>
-                     <goal>add-test-source</goal>
-                  </goals>
-                  <configuration>
-                     <sources>
-                        <source>${project.build.directory}/generated-test-sources/protobuf</source>
-                     </sources>
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin>
-      </plugins>
-   </build>
-</project>
-```
-
 Now it is necessary to download the dependencies via Maven:
 
 ```shell
@@ -238,14 +66,7 @@ cd spawn-java-demo && mvn install
 ```
 
 So far it's all pretty boring and not really Spawn related, so it's time to start playing for real.
-The first thing we're going to do is define a place to put our protobuf files. In the root of the project we will create 
-a folder called protobuf and some sub folders
-
-```shell
-mkdir -p src/main/proto/domain
-```
-
-That done, let's create our protobuf file inside the example folder.
+The first thing we're going to do is define a place to put our protobuf files. 
 
 ```shell
 touch src/main/proto/domain/domain.proto
