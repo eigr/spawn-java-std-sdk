@@ -48,7 +48,7 @@ For more information consult the main repository [documentation](https://github.
 
 ## Getting Started
 
-First we must need to install spawn cli tool to create a new Java project.
+First we need to install spawn cli tool to create a new Java project.
 
 ```shell
 curl -sSL https://github.com/eigr/spawn/releases/download/v1.4.2/install.sh | sh
