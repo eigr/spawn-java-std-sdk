@@ -285,119 +285,9 @@ mvn compile && mvn package && java -jar target/spawn-java-demo-1.0-SNAPSHOT.jar
 ```
 
 But of course you will need to locally run the Elixir proxy which will actually provide all the functionality for your Java application. 
-One way to do this is to create a docker-compose file containing all the services that your application depends on, 
-in this case, in addition to the Spawn proxy, it also has a database and possibly a nats broker if you want access to 
-more advanced Spawn features.
 
-```docker-compose
-version: "3.8"
-services:
-  mariadb:
-    image: mariadb
-    environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: eigr-functions-db
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
-    volumes:
-      - mariadb:/var/lib/mysql
-    ports:
-      - "3307:3306"
-  nats:
-    image: nats:0.8.0
-    entrypoint: "/gnatsd -DV"
-    ports:
-      - "8222:8222"
-      - "4222:4222"
-  spawn-proxy:
-    build:
-      context: https://github.com/eigr/spawn.git#main
-      dockerfile: ./Dockerfile-proxy
-    restart: always
-    network_mode: "host"
-    environment:
-      SPAWN_USE_INTERNAL_NATS: "true"
-      SPAWN_PUBSUB_ADAPTER: nats
-      SPAWN_STATESTORE_KEY: 3Jnb0hZiHIzHTOih7t2cTEPEpY98Tu1wvQkPfq/XwqE=
-      PROXY_APP_NAME: spawn
-      PROXY_CLUSTER_STRATEGY: gossip
-      PROXY_DATABASE_PORT: 3307
-      PROXY_DATABASE_TYPE: mariadb
-      PROXY_HTTP_PORT: 9003
-      USER_FUNCTION_PORT: 8091
-    depends_on:
-      - mariadb
-      - nats
-networks:
-  mysql-compose-network:
-    driver: bridge
-volumes:
-  mariadb:
-
-```
-
-> **_NOTE:_** Or just use the [Spawn CLI](https://github.com/eigr/spawn?tab=readme-ov-file#getting-started-with-spawn) to take care of the development environment for you.
-
-You may also want your Actors to be initialized with some dependent objects similarly to how you would use the 
-dependency injection pattern. 
-In this case, it is enough to declare a constructor that receives a single argument for its actor.
-
-```java
-package io.eigr.spawn.java.demo;
-
-import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.StatefulActor;
-import io.eigr.spawn.api.actors.Value;
-import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
-import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
-import io.eigr.spawn.api.actors.behaviors.NamedActorBehavior;
-import io.eigr.spawn.internal.ActionBindings;
-import io.eigr.spawn.java.demo.domain.Actor.Reply;
-import io.eigr.spawn.java.demo.domain.Actor.Request;
-import io.eigr.spawn.java.demo.domain.Actor.State;
-
-import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
-import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;
-public final class JoeActor implements StatefulActor<State> {
-
-   private String defaultMessage;
-
-   @Override
-   public ActorBehavior configure(BehaviorCtx context) {
-      defaultMessage = context.getInjector().getInstance(String.class);
-      return new NamedActorBehavior(
-              name("JoeActor"),
-              action("SetLanguage", ActionBindings.of(Request.class, this::setLanguage))
-      );
-   }
-
-   // ...
-}
-```
-
-Then you also need to register your Actor using injector :
-
-```java
-package io.eigr.spawn.java.demo;
-
-import io.eigr.spawn.api.Spawn;
-
-import java.util.HashMap;
-import java.util.Map;
-
-public class App {
-   public static void main(String[] args) {
-      DependencyInjector injector = SimpleDependencyInjector.createInjector();
-      injector.bind(String.class, "Hello with Constructor");
-
-      Spawn spawnSystem = new Spawn.SpawnSystem()
-              .create("spawn-system", injector)
-              .withActor(Joe.class)
-              .build();
-
-      spawnSystem.start();
-   }
-}
+```shell
+spawn dev run -p src/main/proto -s spawn-system -W
 ```
 
 Spawn is based on kubernetes and containers, so you will need to generate a docker container for your application.
@@ -416,6 +306,7 @@ Add the following lines to your plugin's section in pom.xml file:
     </configuration>
 </plugin>
 ```
+
 finally you will be able to create your container by running the following command in the root of your project:
 
 ```shell
