@@ -1,10 +1,11 @@
-package io.eigr.spawn;
+package io.eigr.spawn.test;
 
+import domain.actors.Reply;
+import domain.actors.Request;
 import io.eigr.spawn.api.ActorIdentity;
 import io.eigr.spawn.api.ActorRef;
 import io.eigr.spawn.api.exceptions.ActorCreationException;
 import io.eigr.spawn.api.exceptions.ActorInvocationException;
-import io.eigr.spawn.java.test.domain.Actor;
 import io.eigr.spawn.test.actors.JoeActor;
 import io.eigr.spawn.test.actors.StatelessNamedActor;
 import io.eigr.spawn.test.actors.UnNamedActor;
@@ -25,15 +26,15 @@ class SpawnTest extends AbstractContainerBaseTest {
         Assertions.assertEquals(type, JoeActor.class);
         Assertions.assertNotNull(joeActor);
 
-        Actor.Request msg = Actor.Request.newBuilder()
+        Request msg = Request.newBuilder()
                 .setLanguage("Erlang")
                 .build();
 
-        Optional<Actor.Reply> maybeReply =
-                joeActor.invoke("SetLanguage", msg, Actor.Reply.class);
+        Optional<Reply> maybeReply =
+                joeActor.invoke("SetLanguage", msg, Reply.class);
 
         if (maybeReply.isPresent()) {
-            Actor.Reply reply = maybeReply.get();
+            Reply reply = maybeReply.get();
             Assertions.assertNotNull(reply);
             Assertions.assertEquals("Hi Erlang. Hello From Java", reply.getResponse());
         }
@@ -49,15 +50,15 @@ class SpawnTest extends AbstractContainerBaseTest {
         Assertions.assertEquals(type, UnNamedActor.class);
         Assertions.assertNotNull(unNamedJoeActor);
 
-        Actor.Request msg = Actor.Request.newBuilder()
+        Request msg = Request.newBuilder()
                 .setLanguage("Erlang")
                 .build();
 
-        Optional<Actor.Reply> maybeReply =
-                unNamedJoeActor.invoke("SetLanguage", msg, Actor.Reply.class);
+        Optional<Reply> maybeReply =
+                unNamedJoeActor.invoke("SetLanguage", msg, Reply.class);
 
         if (maybeReply.isPresent()) {
-            Actor.Reply reply = maybeReply.get();
+            Reply reply = maybeReply.get();
             Assertions.assertNotNull(reply);
             Assertions.assertEquals("Hi Erlang. Hello From Java", reply.getResponse());
         }
@@ -73,15 +74,15 @@ class SpawnTest extends AbstractContainerBaseTest {
         Assertions.assertEquals(type, StatelessNamedActor.class);
         Assertions.assertNotNull(statelessNamedActor);
 
-        Actor.Request msg = Actor.Request.newBuilder()
+        Request msg = Request.newBuilder()
                 .setLanguage("Elixir")
                 .build();
 
-        Optional<Actor.Reply> maybeReply =
-                statelessNamedActor.invoke("SetLanguage", msg, Actor.Reply.class);
+        Optional<Reply> maybeReply =
+                statelessNamedActor.invoke("SetLanguage", msg, Reply.class);
 
         if (maybeReply.isPresent()) {
-            Actor.Reply reply = maybeReply.get();
+            Reply reply = maybeReply.get();
             Assertions.assertNotNull(reply);
             Assertions.assertEquals("Hi Elixir. Hello From Java", reply.getResponse());
         }

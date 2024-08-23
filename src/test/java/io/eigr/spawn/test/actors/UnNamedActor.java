@@ -1,15 +1,15 @@
 package io.eigr.spawn.test.actors;
 
+import domain.actors.Reply;
+import domain.actors.Request;
+import domain.actors.State;
+import io.eigr.spawn.api.actors.ActionBindings;
 import io.eigr.spawn.api.actors.ActorContext;
 import io.eigr.spawn.api.actors.StatefulActor;
 import io.eigr.spawn.api.actors.Value;
 import io.eigr.spawn.api.actors.behaviors.ActorBehavior;
 import io.eigr.spawn.api.actors.behaviors.BehaviorCtx;
 import io.eigr.spawn.api.actors.behaviors.UnNamedActorBehavior;
-import io.eigr.spawn.internal.ActionBindings;
-import io.eigr.spawn.java.test.domain.Actor.Reply;
-import io.eigr.spawn.java.test.domain.Actor.Request;
-import io.eigr.spawn.java.test.domain.Actor.State;
 
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.action;
 import static io.eigr.spawn.api.actors.behaviors.ActorBehavior.name;

@@ -1,4 +1,4 @@
-package io.eigr.spawn;
+package io.eigr.spawn.test;
 
 import io.eigr.spawn.api.Spawn;
 import io.eigr.spawn.api.TransportOpts;

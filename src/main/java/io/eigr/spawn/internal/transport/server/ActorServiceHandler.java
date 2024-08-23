@@ -2,9 +2,7 @@ package io.eigr.spawn.internal.transport.server;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.protobuf.Any;
-import com.google.protobuf.GeneratedMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.*;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.eigr.functions.protocol.Protocol;
@@ -209,13 +207,16 @@ public final class ActorServiceHandler<B extends ActorBehavior> implements HttpH
      * @return the {@link ActorContext} instance
      * @throws InvalidProtocolBufferException if the state cannot be unpacked
      */
-    private ActorContext createActorContext(Protocol.Context context, Entity entity) throws InvalidProtocolBufferException {
-        if (context.hasState()) {
+    private ActorContext createActorContext(Protocol.Context context, Entity entity) throws InvalidProtocolBufferException, ClassNotFoundException {
+        if (context.hasState() && entity.isStateful()) {
             Any anyCtxState = context.getState();
             log.debug("[{}] trying to get the state of the Actor {}. Parse Any type {} from State type {}",
                     system, entity.getActorName(), anyCtxState, entity.getStateType().getSimpleName());
 
-            Object state = anyCtxState.unpack(entity.getStateType());
+            String typeUrl = anyCtxState.getTypeUrl();
+            String typeName = typeUrl.substring(typeUrl.lastIndexOf('/') + 1);
+            Class protoClass = Class.forName(typeName);
+            Object state = anyCtxState.unpack(protoClass);
             return new ActorContext(spawn, state);
         } else {
             return new ActorContext(spawn);

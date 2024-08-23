@@ -1,8 +1,7 @@
-package io.eigr.spawn.internal;
+package io.eigr.spawn.api.actors;
 
 import com.google.protobuf.Message;
-import io.eigr.spawn.api.actors.ActorContext;
-import io.eigr.spawn.api.actors.Value;
+import io.eigr.spawn.internal.ActionEmptyFunction;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

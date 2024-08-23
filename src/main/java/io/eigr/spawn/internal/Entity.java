@@ -55,7 +55,7 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
             String actorName,
             Class<?> actorType,
             ActorOuterClass.Kind kind,
-            Class stateType,
+            Class<?> stateType,
             String actorBeanName,
             boolean stateful,
             long deactivateTimeout,
@@ -352,7 +352,7 @@ public final class Entity<A extends BaseActor, B extends ActorBehavior> {
         return kind;
     }
 
-    public Class getStateType() {
+    public Class<?> getStateType() {
         return stateType;
     }
 

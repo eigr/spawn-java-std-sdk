@@ -1,6 +1,7 @@
 syntax = "proto3";
-package domain;
-option java_package = "io.eigr.spawn.java.test.domain";
+package domain.actors;
+option java_package = "domain.actors";
+option java_multiple_files = true;
 
 message State {
   repeated string languages = 1;
